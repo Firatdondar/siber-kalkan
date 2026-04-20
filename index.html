@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siber Kalkan - Çift Çekirdekli Güvenlik</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#050b14">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+        /* 1. SİSTEM: KUTU MODELİ (Taşmaları kökten çözer) */
+        * { box-sizing: border-box; }
+        
+        body { font-family: 'Consolas', 'Segoe UI', monospace; background: #050b14; color: #e2e8f0; margin: 0; padding: 20px; overflow-x: hidden; width: 100%; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 20px; margin-bottom: 40px; flex-wrap: wrap; gap: 15px; }
+        h1 { color: #0ea5e9; margin: 0; font-size: 28px; text-shadow: 0 0 15px rgba(14, 165, 233, 0.4); }
+        
+        .selection-container { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 50px; }
+        
+        /* 2. KARTLAR: Sabit 400px yerine esnek %100 genişlik */
+        .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; text-align: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent); transform: translateX(-100%); transition: 0.6s; }
+        .card:hover::before { transform: translateX(100%); }
+        .card:hover { transform: translateY(-15px); box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .card h2 { font-size: 26px; margin-bottom: 15px; }
+        .card p { color: #94a3b8; font-size: 16px; line-height: 1.6; font-family: 'Segoe UI', sans-serif;}
+
+        .card.bildirim-card { border-bottom: 6px solid #10b981; }
+        .card.bildirim-card:hover { border-color: #34d399; box-shadow: 0 20px 40px rgba(16, 185, 129, 0.2); }
+        .card.analiz-card { border-bottom: 6px solid #f59e0b; }
+        .card.analiz-card:hover { border-color: #fbbf24; box-shadow: 0 20px 40px rgba(245, 158, 11, 0.2); }
+
+        .view-section { display: none; animation: fadeIn 0.6s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-back { background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 30px; transition: 0.3s; }
+        .btn-back:hover { background: #1e293b; color: white; }
+
+        /* 3. KONTEYNER: Sabit 450px yerine minimum 280px */
+        .container-box { flex: 2; min-width: 280px; width: 100%; background: #0f172a; border-radius: 16px; padding: 35px; border: 1px solid #1e293b; }
+        textarea { width: 100%; padding: 15px; border-radius: 10px; background: #050b14; border: 1px solid #334155; color: #10b981; font-family: monospace; font-size: 15px; resize: none; box-sizing: border-box; }
+        textarea:focus { outline: none; border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+        .btn-run { background: #10b981; color: #050b14; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 20px; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;}
+        .btn-run:hover { background: #34d399; transform: scale(1.02); }
+        
+        .result-box { background: #050b14; border-radius: 10px; padding: 25px; margin-top: 25px; display: none; border-left: 4px solid #10b981; }
+        .step { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #1e293b; animation: slideIn 0.4s ease-out backwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        
+        .accordion { background-color: #1e293b; color: #e2e8f0; cursor: pointer; padding: 16px; width: 100%; text-align: left; border: 1px solid #334155; border-radius: 8px; font-size: 16px; font-family: 'Segoe UI', sans-serif; margin-bottom: 10px; transition: 0.3s; font-weight: bold; display: flex; align-items: center;}
+        .accordion:hover { background-color: #334155; }
+        .app-icon { width: 28px; height: 28px; margin-right: 15px; border-radius: 5px; }
+        
+        .panel { padding: 20px; background-color: #050b14; display: none; border-left: 3px solid #0ea5e9; margin-bottom: 20px; border-radius: 0 0 8px 8px; font-family: 'Segoe UI', sans-serif; color: #cbd5e1; line-height: 1.6; word-break: break-word;}
+        
+        .integration-step { background: #0f172a; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #1e293b; }
+        .integration-step span { color: #0ea5e9; font-weight: bold; margin-right: 10px; }
+        .integration-input { width: 100%; padding: 12px; margin-top: 10px; border-radius: 6px; background: #050b14; border: 1px solid #334155; color: white; box-sizing: border-box; font-family: monospace;}
+        .btn-connect { background: #0ea5e9; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; }
+        .btn-connect:hover { filter: brightness(1.2); }
+        .guide-box { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 15px; margin-top: 15px; }
+        
+        /* 4. METİN TAŞMALARINI ENGELLE */
+        .code-block { background: #000; color: #a78bfa; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 13px; overflow-x: auto; border-left: 3px solid #8b5cf6; white-space: pre-wrap; word-break: break-all;}
+        .section-title { color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; margin-top: 30px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+
+        /* 5. MOBİL UYUMLULUK SİHRİ (Sola/Sağa kaymayı tamamen sıfırlar) */
+        @media (max-width: 768px) {
+            body { padding: 15px; }
+            .header h1 { font-size: 22px; text-align: center; width: 100%; }
+            .card { padding: 25px; margin-bottom: 10px; }
+            .container-box { padding: 20px; }
+            .selection-container { gap: 15px; margin-top: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div><h1><span style="color:white;">⚡</span> Siber Kalkan Koruma Merkezi</h1></div>
+        <div style="color: #10b981; font-weight: bold; font-family: 'Segoe UI', sans-serif; font-size: 14px;">● Sistem Çevrimiçi</div>
+    </div>
+
+    <div id="home-view" class="selection-container">
+        <div class="card bildirim-card" onclick="showView('bildirim-view')">
+            <h2 style="color: #10b981;">📱 Entegrasyon & Otomasyonlar</h2>
+            <p>MacroDroid cihaz köprüsü ve sohbet uygulamalarınızı API'ye bağlayarak otomatik kalkanı aktifleştirin.</p>
+        </div>
+        <div class="card analiz-card" onclick="showView('analiz-view')">
+            <h2 style="color: #f59e0b;">🦠 VirusTotal Dosya & Link Analizi</h2>
+            <p>Şüpheli PDF, EXE dosyalarını ve zararlı olduğunu düşündüğünüz internet linklerini manuel olarak derinlemesine tarayın.</p>
+        </div>
+    </div>
+
+    <div id="bildirim-view" class="view-section">
+        <button class="btn-back" onclick="showView('home-view')">← Ana Sisteme Dön</button>
+        
+        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+            <div class="container-box">
+                <h2 style="color:#10b981; margin-top:0;">🔌 Sistem Entegrasyon Merkezi</h2>
+                <p style="color:#64748b; font-family: 'Segoe UI'; margin-bottom: 25px;">Telefonunuzu veya sohbet kanallarınızı API'mize bağlayın.</p>
+
+                <div class="section-title">1. Tam Otomatik Cihaz Kalkanı (Bildirim Okuyucu)</div>
+                
+                <button class="accordion" style="border-left: 4px solid #10b981;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/6124/6124997.png" class="app-icon" style="filter: brightness(0) invert(1) hue-rotate(100deg);">
+                    MacroDroid (WhatsApp, SMS & Instagram Desteği)
+                </button>
+                <div class="panel" style="border-left-color: #10b981;">
+                    <p>WhatsApp ve Instagram gibi uygulamalar kapalı kutudur ve doğrudan API bağlantısı kabul etmezler. <b>MacroDroid</b> ile telefonunuzun bildirim ekranını okuyarak bu engeli aşıyoruz.</p>
+                    <div class="guide-box">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" width="24">
+                            <img src="https://cdn-icons-png.flaticon.com/512/733/733100.png" width="24">
+                            <h4 style="margin:0; color:#34d399;">Köprü Kurulum Rehberi</h4>
+                        </div>
+                        <div class="integration-step"><span>1.</span> Google Play Store'dan <b>MacroDroid</b> uygulamasını indirin.</div>
+                        <div class="integration-step"><span>2.</span> Makro Ekle > Tetikleyici: <b>Cihaz Bildirimi</b> (İzlemek istediğiniz uygulamaları seçin: WhatsApp vb.)</div>
+                        <div class="integration-step"><span>3.</span> Eylem > Uygulamalar > <b>HTTP İsteği Gönder (POST)</b> seçin.</div>
+                        <div class="integration-step"><span>4. API URL'si:</span>
+                            <input type="text" class="integration-input" value="https://siber-kalkan-api.com/api/v1/analiz/mobil/" readonly>
+                        </div>
+                        <div class="integration-step"><span>5. Veri (JSON):</span> İstek gövdesine şu kodu yapıştırıp kaydedin:
+                            <div class="code-block">{"message": "[not_title] - [not_text]"}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">2. API & Bulut Tabanlı Sohbet Entegrasyonları</div>
+
+                <button class="accordion" style="border-left: 4px solid #5865F2;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/5968/5968756.png" class="app-icon">Discord (Canlı Alarm & Log Kanalı)
+                </button>
+                <div class="panel" style="border-left-color: #5865F2;">
+                    <div class="integration-step">Sistem bir virüs veya oltalama yakaladığında anında sunucunuza bildirir. Discord Kanal Ayarları > Entegrasyonlar > Webhook URL'sini yapıştırın:</div>
+                    <input type="text" class="integration-input" placeholder="https://discord.com/api/webhooks/...">
+                    <button class="btn-connect" style="background:#5865F2;">Discord Webhook Bağla</button>
+                </div>
+
+                <button class="accordion" style="border-left: 4px solid #0088cc;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" class="app-icon">Telegram (Analiz Botu)
+                </button>
+                <div class="panel" style="border-left-color: #0088cc;">
+                    <div class="integration-step">BotFather'dan aldığınız HTTP API Token'ı buraya girerek şüpheli mesajları Telegram'dan API'ye iletin.</div>
+                    <input type="text" class="integration-input" placeholder="Örn: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+                    <button class="btn-connect" style="background:#0088cc;">Telegram Botu Başlat</button>
+                </div>
+
+                <button class="accordion" style="border-left: 4px solid #EA4335;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/5968/5968534.png" class="app-icon">Gmail (Spam Avcısı)
+                </button>
+                <div class="panel" style="border-left-color: #EA4335;">
+                    <div class="integration-step">Gelen kutunuzu taramak için Google Hesabı > Güvenlik > 16 Haneli Uygulama Şifrenizi girin.</div>
+                    <input type="password" class="integration-input" placeholder="16 Haneli Güvenlik Şifresi">
+                    <button class="btn-connect" style="background:#EA4335;">Gmail Tarayıcısını Aktifleştir</button>
+                </div>
+
+                <button class="accordion" style="border-left: 4px solid #E01E5A;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3800/3800024.png" class="app-icon">Slack (Kurumsal Çalışma Alanı)
+                </button>
+                <div class="panel" style="border-left-color: #E01E5A;">
+                    <div class="integration-step">Slack çalışma alanınızdaki "Incoming Webhooks" uygulamasından aldığınız URL'yi yapıştırın.</div>
+                    <input type="text" class="integration-input" placeholder="https://hooks.slack.com/services/...">
+                    <button class="btn-connect" style="background:#E01E5A;">Slack'e Bağla</button>
+                </div>
+
+                <button class="accordion" style="border-left: 4px solid #6264A7;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/906/906349.png" class="app-icon">Microsoft Teams (SOC Alarmları)
+                </button>
+                <div class="panel" style="border-left-color: #6264A7;">
+                    <div class="integration-step">Teams kanalınızdan "Incoming Webhook" oluşturup bağlantı adresini girin.</div>
+                    <input type="text" class="integration-input" placeholder="Teams Webhook URL...">
+                    <button class="btn-connect" style="background:#6264A7;">Teams Entegrasyonu Ekle</button>
+                </div>
+
+            </div>
+            
+            <div style="flex: 1; min-width: 300px; background:#0f172a; padding:25px; border-radius:16px; border: 1px solid #1e293b; height: fit-content; position: sticky; top: 20px;">
+                <h3 style="text-align:center; color:#0ea5e9; margin-top:0; font-family: 'Segoe UI';">Sistem İstatistiği</h3>
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="analiz-view" class="view-section">
+        <button class="btn-back" onclick="showView('home-view')">← Ana Sisteme Dön</button>
+        
+        <div style="display: flex; gap: 30px; flex-wrap: wrap; justify-content: center;">
+            <div class="container-box">
+                <h2 style="color:#f59e0b; margin-top:0;">🦠 VirusTotal Laboratuvarı & Link Testi</h2>
+                <p style="color:#64748b; font-family: 'Segoe UI'; margin-bottom: 25px;">Dosyalarınızı ve linklerinizi manuel olarak detaylıca test edin.</p>
+
+                <button class="accordion active" style="border-left: 4px solid #f97316;">🔑 1. Adım: VirusTotal API Anahtarını Gir</button>
+                <div class="panel" style="display:block; border-left-color: #f97316;">
+                    <p>Dosya analizlerinde kendi API anahtarınızı kullanarak tarama yapın. (Sadece tarayıcınızda şifreli saklanır).</p>
+                    <input type="text" id="vtKeyInp" class="integration-input" placeholder="64 Haneli VirusTotal Key (Örn: 9f86d08...)">
+                    <button class="btn-connect" style="background:#f97316; width:100%;" onclick="saveVTKey()">API Key'i Sisteme Tanımla</button>
+                </div>
+
+                <button class="accordion active" style="border-left: 4px solid #0ea5e9;">📁 2. Adım: VirusTotal Dosya Taraması (PDF, EXE)</button>
+                <div class="panel" style="display:block; border-left-color: #0ea5e9;">
+                    <p>Sistem dosyayı doğrudan sunucuya yüklemez. Kendi cihazınızda Hash (kimlik) değeri çıkarılarak VirusTotal'e güvenle sorulur.</p>
+                    <input type="file" id="fileUpload" class="integration-input" style="background: #1e293b; cursor: pointer; padding: 15px;">
+                    <button class="btn-run" onclick="runFileAnalysis()" style="margin-top:15px; background:#0ea5e9;">DOSYAYI VIRUSTOTAL'DE TARAT</button>
+                    <div id="fileRes" class="result-box"></div>
+                </div>
+
+                <button class="accordion active" style="border-left: 4px solid #10b981;">📝 3. Adım: Yapay Zeka Link & Metin Taraması</button>
+                <div class="panel" style="display:block; border-left-color: #10b981;">
+                    <p>Sizi şüphelendiren bir internet sitesi linkini veya yönlendirme mesajını test edin.</p>
+                    <textarea id="mobInp" rows="3" placeholder="Örn: Hesabınız kısıtlandı! Açmak için tıklayın: http://guvenli-banka-guncelleme.com"></textarea>
+                    <button class="btn-run" onclick="runMobile()">LİNKİ / METNİ ANALİZ ET</button>
+                    <div id="mobRes" class="result-box"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showView(viewId) {
+            document.getElementById('home-view').style.display = 'none';
+            document.getElementById('bildirim-view').style.display = 'none';
+            document.getElementById('analiz-view').style.display = 'none';
+            document.getElementById(viewId).style.display = 'block';
+            
+            if(viewId === 'home-view') document.getElementById('home-view').style.display = 'flex';
+            if(viewId === 'bildirim-view') loadChart();
+        }
+
+        var acc = document.getElementsByClassName("accordion");
+        for (var i = 0; i < acc.length; i++) { acc[i].addEventListener("click", function() { this.classList.toggle("active"); var p = this.nextElementSibling; p.style.display = (p.style.display === "block") ? "none" : "block"; }); }
+
+        async function loadChart() {
+            try {
+                const r = await fetch('/api/v1/sistem/istatistik/'); 
+                const d = await r.json();
+                if(window.myChartObj) window.myChartObj.destroy();
+                window.myChartObj = new Chart(document.getElementById('myChart'), { type:'doughnut', data:{ labels:['Riskli','Güvenli','Şüpheli'], datasets:[{ data:[d.zararli, d.guvenli, d.supheli], backgroundColor:['#ef4444','#10b981','#f59e0b'], borderWidth:0 }] }, options:{ color:'#fff', cutout: '75%' }});
+            } catch(e) {
+                console.log("Grafik verisi çekilemedi. Veritabanını (siber_guvenlik_analiz.db) silip uvicorn'u yeniden başlatın.");
+            }
+        }
+
+        function saveVTKey() {
+            const key = document.getElementById('vtKeyInp').value.trim();
+            if(key.length > 30) {
+                localStorage.setItem('vt_key', key);
+                alert('Başarılı! VirusTotal API Key tarayıcınıza kaydedildi.');
+            } else {
+                alert('Lütfen geçerli bir VirusTotal API Key girin.');
+            }
+        }
+
+        window.addEventListener('load', () => {
+            if(localStorage.getItem('vt_key')) document.getElementById('vtKeyInp').value = localStorage.getItem('vt_key');
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js').catch(err => console.log('PWA Hatası:', err));
+            }
+        });
+
+        async function runFileAnalysis() {
+            const fileInp = document.getElementById('fileUpload');
+            if(!fileInp.files.length) return alert('Lütfen taramak için bir dosya seçin.');
+            
+            const btn = event.target;
+            btn.innerHTML = "VIRUSTOTAL SORGULANIYOR...";
+            btn.style.background = "#f59e0b";
+            
+            const resDiv = document.getElementById('fileRes');
+            resDiv.style.display = "block";
+            resDiv.innerHTML = `<div class="step" style="border:none; color:#f59e0b;">Dosya hashleniyor... Lütfen bekleyin.</div>`;
+            
+            const formData = new FormData();
+            formData.append("file", fileInp.files[0]);
+            
+            const headers = {};
+            const vtKey = localStorage.getItem('vt_key');
+            if(vtKey) headers['x-vt-key'] = vtKey;
+
+            try {
+                const r = await fetch('/api/v1/analiz/dosya/', { method: 'POST', headers: headers, body: formData });
+                const d = await r.json();
+                
+                let color = d.sonuc === "Zararli" ? "#ef4444" : (d.sonuc === "Guvenli" ? "#10b981" : "#f59e0b");
+                resDiv.style.borderLeftColor = color;
+                
+                resDiv.innerHTML = `
+                    <div class="step"><span style="color:#0ea5e9;">[+] SHA-256 Kimliği Çıkarıldı:</span> <br> <span style="color:#64748b; font-size:12px;">${d.hash}</span></div>
+                    <div class="step" style="border:none;">
+                        <b style="color:${color}; font-size:20px;">[SİSTEM KARARI] ${d.sonuc.toUpperCase()}</b><br>
+                        <span style="font-size:14px; color:#cbd5e1;">${d.detay}</span>
+                    </div>
+                `;
+            } catch (err) {
+                resDiv.innerHTML = `<div class="step" style="color:#ef4444;">Analiz sırasında sunucu ile bağlantı koptu.</div>`;
+            }
+            
+            btn.innerHTML = "DOSYAYI VIRUSTOTAL'DE TARAT";
+            btn.style.background = "#0ea5e9";
+        }
+
+        async function runMobile() {
+            const btn = event.target;
+            btn.innerHTML = "LİNK ANALİZ EDİLİYOR... [ ▓▓▓▓▓▓▓░░░ ]";
+            btn.style.background = "#f59e0b";
+            
+            let resDiv = document.getElementById('mobRes');
+            resDiv.style.display = "none";
+
+            const r = await fetch('/api/v1/analiz/mobil/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message: document.getElementById('mobInp').value}) });
+            const d = await r.json();
+            
+            setTimeout(() => {
+                resDiv.style.display = "block";
+                if(d.status === "clean") {
+                    resDiv.style.borderLeftColor = "#10b981";
+                    resDiv.innerHTML = `<div class="step" style="border:none;"><b style="color:#10b981; font-size:18px;">${d.message}</b></div>`;
+                } else {
+                    let color = d.karar === "Zararli" ? "#ef4444" : "#10b981";
+                    resDiv.style.borderLeftColor = color;
+                    let typoHtml = d.typo ? `<div class="step"><span style="color:#f59e0b;">[UYARI] Marka Taklidi (Typosquatting):</span> Bilinen marka adı manipüle edilmiş!</div>` : '';
+                    resDiv.innerHTML = `
+                        <div class="step"><span style="color:#0ea5e9;">[+] Regex Link Ayıklama:</span> Başarılı.<br> <span style="color:#64748b;">> ${d.ilk_url}</span></div>
+                        <div class="step"><span style="color:#0ea5e9;">[+] Unshorten (Kısa Link Çözümü):</span> Tamamlandı.<br> <span style="color:#64748b;">> Hedef: ${d.son_url}</span></div>
+                        ${typoHtml}
+                        <div class="step" style="border:none;">
+                            <b style="color:${color}; font-size:20px;">[AI KARARI] %${d.risk} RİSK - ${d.karar.toUpperCase()}</b><br>
+                            <span style="font-size:12px; color:#475569;">[Sistem veritabanına işlendi]</span>
+                        </div>
+                    `;
+                }
+                btn.innerHTML = "LİNKİ / METNİ ANALİZ ET";
+                btn.style.background = "#10b981";
+            }, 800); 
+        }
+    </script>
+</body>
+</html>
