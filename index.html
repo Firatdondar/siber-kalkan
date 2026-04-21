@@ -132,14 +132,26 @@
                 </div>
 
                 <button class="accordion" style="border-left: 4px solid #0088cc;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" class="app-icon">Telegram (Analiz Botu)
+                    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" class="app-icon">Telegram (Görsel OCR & Karantina Botu)
                 </button>
                 <div class="panel" style="border-left-color: #0088cc;">
-                    <div class="integration-step">BotFather'dan aldığınız HTTP API Token'ı buraya girerek şüpheli mesajları Telegram'dan API'ye iletin. Sistem arkaplanda Webhook bağlantısını otomatik kuracaktır.</div>
+                    <div class="integration-step">BotFather'dan aldığınız HTTP API Token'ı buraya girerek şüpheli mesajları Telegram'dan API'ye iletin. Sistem arkaplanda Webhook bağlantısını otomatik kuracaktır. Görsel atıldığında OCR ile okur.</div>
                     <input type="text" id="tgTokenInp" class="integration-input" placeholder="Örn: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
-                    <button class="btn-connect" style="background:#0088cc;" onclick="saveTelegramKey()">Telegram Botu Sisteme Tanımla</button>
-                    <div id="tgRes" style="margin-top:10px; color:#10b981; font-weight:bold; display:none;"></div>
                 </div>
+                
+                <button class="accordion" style="border-left: 4px solid #ea4335;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/732/732200.png" class="app-icon" style="background: white; padding: 2px;">Gmail Gelen Kutusu Kalkanı (IMAP)
+                </button>
+                <div class="panel" style="border-left-color: #ea4335;">
+                    <div class="integration-step">Sistem okunmamış mailleri tarar ve tehdit bulursa karantinaya alır. <i>(Gmail > Güvenlik > Uygulama Şifreleri kısmından alınan 16 haneli şifreyi girin.)</i></div>
+                    <input type="text" id="gmAdresInp" class="integration-input" placeholder="E-Posta Adresiniz (Örn: admin@gmail.com)">
+                    <input type="password" id="gmSifreInp" class="integration-input" placeholder="16 Haneli Uygulama Şifresi">
+                    <button class="btn-run" onclick="gmailTara()" style="margin-top:15px; background:#ea4335; color:white;">E-POSTA KUTUSUNU ŞİMDİ TARA</button>
+                    <div id="emailRes" class="result-box"></div>
+                </div>
+
+                <button class="btn-connect" onclick="sistemAyarlariniKaydet()" style="margin-top: 20px; width: 100%; font-size: 16px; background: #10b981; color: #050b14;">TÜM SİSTEM AYARLARINI KAYDET & BAĞLA</button>
+                <div id="ayarRes" style="margin-top:15px; font-weight:bold; text-align:center;"></div>
 
             </div>
             
@@ -218,42 +230,6 @@
             } else {
                 alert('Lütfen geçerli bir VirusTotal API Key girin.');
             }
-        }
-
-        /* YENİ EKLENEN TELEGRAM KAYDETME FONKSİYONU */
-        async function saveTelegramKey() {
-            const token = document.getElementById('tgTokenInp').value.trim();
-            // Sistem şu anki canlı linkini (https://siber-kalkan.onrender.com) otomatik alır
-            const renderUrl = window.location.origin; 
-            
-            if(token.length < 20) return alert('Lütfen BotFather\'dan aldığınız geçerli bir token girin.');
-            
-            const btn = event.target;
-            btn.innerHTML = "Kaydediliyor ve Webhook Ayarlanıyor... ⏳";
-            
-            try {
-                const r = await fetch('/api/v1/ayarlar/telegram/', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ telegram_token: token, render_url: renderUrl })
-                });
-                const d = await r.json();
-                
-                let resDiv = document.getElementById('tgRes');
-                resDiv.style.display = "block";
-                
-                if(d.status === "success") {
-                    resDiv.style.color = "#10b981";
-                    resDiv.innerHTML = "✅ " + d.message;
-                } else {
-                    resDiv.style.color = "#ef4444";
-                    resDiv.innerHTML = "❌ " + d.message;
-                }
-            } catch (err) {
-                alert('Sunucuya bağlanılamadı.');
-            }
-            
-            btn.innerHTML = "Telegram Botu Sisteme Tanımla";
         }
 
         window.addEventListener('load', () => {
@@ -337,6 +313,55 @@
                 btn.innerHTML = "LİNKİ / METNİ ANALİZ ET";
                 btn.style.background = "#10b981";
             }, 800); 
+        }
+
+        // --- YENİ: Sistem Ayarları ve Gmail Motoru ---
+        async function sistemAyarlariniKaydet() {
+            const tg = document.getElementById('tgTokenInp') ? document.getElementById('tgTokenInp').value.trim() : "";
+            const gm_adres = document.getElementById('gmAdresInp') ? document.getElementById('gmAdresInp').value.trim() : "";
+            const gm_sifre = document.getElementById('gmSifreInp') ? document.getElementById('gmSifreInp').value.trim() : "";
+            const renderUrl = window.location.origin;
+            
+            const btn = event.target; 
+            btn.innerHTML = "KAYDEDİLİYOR... ⏳";
+            
+            try {
+                const r = await fetch('/api/v1/ayarlar/kaydet/', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ telegram_token: tg, render_url: renderUrl, gmail_adres: gm_adres, gmail_sifre: gm_sifre })
+                });
+                const d = await r.json();
+                const resDiv = document.getElementById('ayarRes');
+                if(d.status === "success") { 
+                    resDiv.style.color = "#10b981"; 
+                    resDiv.innerHTML = "✅ Tüm Sistem Ayarları Buluta Eşitlendi!"; 
+                } else { 
+                    resDiv.style.color = "#ef4444"; 
+                    resDiv.innerHTML = "❌ Hata: " + d.message; 
+                }
+            } catch (err) { alert('Sunucu bağlantı hatası.'); }
+            btn.innerHTML = "TÜM SİSTEM AYARLARINI KAYDET & BAĞLA";
+        }
+
+        async function gmailTara() {
+            const btn = event.target; 
+            btn.innerHTML = "E-POSTALAR TARANIYOR... ⏳"; 
+            btn.style.background = "#f59e0b";
+            
+            const resDiv = document.getElementById('emailRes'); 
+            resDiv.style.display = "block"; 
+            resDiv.innerHTML = "Sunucuya bağlanılıyor, mailler okunuyor...";
+            
+            try {
+                const r = await fetch('/api/v1/analiz/email/', { method: 'POST' });
+                const d = await r.json();
+                resDiv.style.borderLeftColor = d.status === "success" ? "#10b981" : "#ef4444";
+                resDiv.innerHTML = `<b style="color:${d.status === "success" ? "#10b981" : "#ef4444"};">${d.message}</b>`;
+            } catch (err) { 
+                resDiv.innerHTML = `<b style="color:#ef4444;">Analiz başarısız. Bağlantı koptu.</b>`; 
+            }
+            btn.innerHTML = "E-POSTA KUTUSUNU ŞİMDİ TARA"; 
+            btn.style.background = "#ea4335";
         }
     </script>
 </body>
