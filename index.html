@@ -41,7 +41,6 @@
         .btn-run { background: #10b981; color: #050b14; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 20px; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;}
         .btn-run:hover { background: #34d399; transform: scale(1.02); }
         
-        /* YENİ: PDF Butonları ve Badge Tasarımı */
         .btn-pdf { background: #6366f1; color: white; font-size: 14px; width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; }
         .btn-pdf:hover { background: #4f46e5; }
         .badge { background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
@@ -87,8 +86,8 @@
             <p>MacroDroid cihaz köprüsü ve sohbet uygulamalarınızı API'ye bağlayarak otomatik kalkanı aktifleştirin.</p>
         </div>
         <div class="card analiz-card" onclick="showView('analiz-view')">
-            <h2 style="color: #f59e0b;">🦠 VirusTotal Dosya & Link Analizi</h2>
-            <p>Şüpheli PDF, EXE dosyalarını ve zararlı olduğunu düşündüğünüz internet linklerini manuel olarak derinlemesine tarayın.</p>
+            <h2 style="color: #f59e0b;">🦠 Laboratuvar & Analiz Merkezi</h2>
+            <p>Şüpheli dosyaları tarayın, IP adreslerini araştırın ve ağ zafiyetlerini kontrol edin.</p>
         </div>
     </div>
 
@@ -173,8 +172,8 @@
         
         <div style="display: flex; gap: 30px; flex-wrap: wrap; justify-content: center;">
             <div class="container-box">
-                <h2 style="color:#f59e0b; margin-top:0;">🦠 VirusTotal Laboratuvarı & Link Testi</h2>
-                <p style="color:#64748b; font-family: 'Segoe UI'; margin-bottom: 25px;">Dosyalarınızı ve linklerinizi manuel olarak detaylıca test edin.</p>
+                <h2 style="color:#f59e0b; margin-top:0;">🦠 İstihbarat & Analiz Laboratuvarı</h2>
+                <p style="color:#64748b; font-family: 'Segoe UI'; margin-bottom: 25px;">Dosya taramalarından ağ zafiyetlerine kadar tam donanımlı istihbarat aracı.</p>
 
                 <button class="accordion active" style="border-left: 4px solid #f97316;">🔑 1. Adım: VirusTotal API Anahtarını Gir</button>
                 <div class="panel" style="display:block; border-left-color: #f97316;">
@@ -201,10 +200,34 @@
 
                 <button class="accordion active" style="border-left: 4px solid #ef4444;">🕵️‍♂️ 4. Veri Sızıntısı Radarı (Dark Web)</button>
                 <div class="panel" style="display:block; border-left-color: #ef4444;">
-                    <p style="font-size: 13px; color:#94a3b8;">Sizin veya müşterinizin e-posta adresi geçmişte hacklendi mi? Açık kaynaklı OSINT veritabanında arayın.</p>
+                    <p style="font-size: 13px; color:#94a3b8;">E-posta adresiniz geçmişte hacklendi mi? Açık kaynaklı OSINT veritabanında arayın.</p>
                     <input type="email" id="breachInp" class="integration-input" placeholder="Test edilecek e-posta adresi (Örn: test@gmail.com)">
                     <button class="btn-run" onclick="runBreachCheck()" style="margin-top:15px; background:#ef4444; color:white;">SIZINTILARI KONTROL ET</button>
                     <div id="breachRes" class="result-box"></div>
+                </div>
+
+                <button class="accordion active" style="border-left: 4px solid #8b5cf6;">🌍 5. Hedef İstihbaratı (IP/Lokasyon Radarı)</button>
+                <div class="panel" style="display:block; border-left-color: #8b5cf6;">
+                    <p style="font-size: 13px; color:#94a3b8;">Zararlı sitelerin veya IP adreslerinin fiziksel konumunu, kurumunu ve internet sağlayıcısını bulun.</p>
+                    <input type="text" id="ipInp" class="integration-input" placeholder="Hedef IP veya Alan Adı (Örn: google.com)">
+                    <button class="btn-run" onclick="runIpRadar()" style="margin-top:15px; background:#8b5cf6; color:white;">LOKASYON İSTİHBARATI TOPLA</button>
+                    <div id="ipRes" class="result-box"></div>
+                </div>
+
+                <button class="accordion active" style="border-left: 4px solid #ec4899;">🔑 6. Kriptografik Şifre Sızıntı Testi</button>
+                <div class="panel" style="display:block; border-left-color: #ec4899;">
+                    <p style="font-size: 13px; color:#94a3b8;">Şifreniz tarayıcınızda (SHA-1) şifrelenir. API'ye sadece ilk 5 hanesi gönderilir (k-Anonymity).</p>
+                    <input type="password" id="passInp" class="integration-input" placeholder="Güvenli test edilecek şifre...">
+                    <button class="btn-run" onclick="runPasswordCheck()" style="margin-top:15px; background:#ec4899; color:white;">ŞİFREYİ GÜVENLİ TEST ET</button>
+                    <div id="passRes" class="result-box"></div>
+                </div>
+
+                <button class="accordion active" style="border-left: 4px solid #f43f5e;">🎯 7. Ağ Zafiyet Tarayıcısı (Pentest)</button>
+                <div class="panel" style="display:block; border-left-color: #f43f5e;">
+                    <p style="font-size: 13px; color:#94a3b8;">Hedef sunucunun açık bıraktığı kritik portları (SSH, FTP, Veritabanı vb.) tespit ederek zafiyet taraması yapın.</p>
+                    <input type="text" id="portInp" class="integration-input" placeholder="Hedef IP veya Alan Adı (Örn: 192.168.1.1)">
+                    <button class="btn-run" onclick="runPortScan()" style="margin-top:15px; background:#f43f5e; color:white;">AÇIK PORTLARI (ZAFİYET) TARA</button>
+                    <div id="portRes" class="result-box"></div>
                 </div>
 
             </div>
@@ -253,7 +276,6 @@
             }
         });
 
-        // YENİ: PDF İNDİRME FONKSİYONU
         function indirPDF(hedef, risk, karar, detay) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
@@ -278,7 +300,6 @@
             doc.save("SiberKalkan_Rapor_" + Date.now() + ".pdf");
         }
 
-        // YENİ: OSINT VERİ SIZINTISI FONKSİYONU
         async function runBreachCheck() {
             const email = document.getElementById('breachInp').value.trim();
             if(!email || !email.includes('@')) return alert('Geçerli bir mail girin!');
@@ -330,7 +351,6 @@
                 let color = d.sonuc === "Zararli" ? "#ef4444" : (d.sonuc === "Guvenli" ? "#10b981" : "#f59e0b");
                 resDiv.style.borderLeftColor = color;
                 
-                // YENİ: Metadata Gösterimi ve PDF Butonu eklendi
                 resDiv.innerHTML = `
                     <div class="step"><span style="color:#a855f7;">[+] Adli Bilişim (Metadata) İzleri:</span> <br> <span style="color:#cbd5e1; font-size:13px;">${d.meta || 'Bulunamadi'}</span></div>
                     <div class="step"><span style="color:#0ea5e9;">[+] SHA-256 Kimliği Çıkarıldı:</span> <br> <span style="color:#64748b; font-size:12px;">${d.hash}</span></div>
@@ -369,7 +389,6 @@
                     resDiv.style.borderLeftColor = color;
                     let typoHtml = d.typo ? `<div class="step"><span style="color:#f59e0b;">[UYARI] Marka Taklidi (Typosquatting):</span> Bilinen marka adı manipüle edilmiş!</div>` : '';
                     
-                    // YENİ: PDF Butonu Eklendi
                     resDiv.innerHTML = `
                         <div class="step"><span style="color:#0ea5e9;">[+] Regex Link Ayıklama:</span> Başarılı.<br> <span style="color:#64748b;">> ${d.ilk_url}</span></div>
                         <div class="step"><span style="color:#0ea5e9;">[+] Unshorten (Kısa Link Çözümü):</span> Tamamlandı.<br> <span style="color:#64748b;">> Hedef: ${d.son_url}</span></div>
@@ -386,7 +405,6 @@
             }, 800); 
         }
 
-        // --- YENİ: Sistem Ayarları ve Gmail Motoru ---
         async function sistemAyarlariniKaydet() {
             const tg = document.getElementById('tgTokenInp') ? document.getElementById('tgTokenInp').value.trim() : "";
             const gm_adres = document.getElementById('gmAdresInp') ? document.getElementById('gmAdresInp').value.trim() : "";
@@ -433,6 +451,106 @@
             }
             btn.innerHTML = "E-POSTA KUTUSUNU ŞİMDİ TARA"; 
             btn.style.background = "#ea4335";
+        }
+
+        // --- YENİ EKLENEN İSTİHBARAT VE SIZMA TESTİ FONKSİYONLARI ---
+
+        // YENİ 1: IP İstihbaratı
+        async function runIpRadar() {
+            const hedef = document.getElementById('ipInp').value.trim();
+            if(!hedef) return alert('Lütfen bir hedef girin.');
+            const btn = event.target; btn.innerHTML = "UYDU BAĞLANTISI... ⏳"; btn.style.background = "#7c3aed";
+            const resDiv = document.getElementById('ipRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Global veritabanları taranıyor...";
+            
+            try {
+                const r = await fetch('/api/v1/osint/ip/' + encodeURIComponent(hedef));
+                const d = await r.json();
+                if(d.status === "success" && d.data.status === "success") {
+                    resDiv.style.borderLeftColor = "#8b5cf6";
+                    resDiv.innerHTML = `
+                        <div class="step"><b style="color:#8b5cf6; font-size:18px;">📍 İstihbarat Raporu</b></div>
+                        <span style="color:#cbd5e1;"><b>Ülke:</b> ${d.data.country} (${d.data.countryCode})</span><br>
+                        <span style="color:#cbd5e1;"><b>Şehir:</b> ${d.data.city}</span><br>
+                        <span style="color:#cbd5e1;"><b>ISP (Sağlayıcı):</b> ${d.data.isp}</span><br>
+                        <span style="color:#cbd5e1;"><b>Kurum:</b> ${d.data.org}</span><br>
+                        <span style="color:#cbd5e1;"><b>Hedef IP:</b> ${d.data.query}</span>
+                    `;
+                } else {
+                    resDiv.innerHTML = `<b style="color:#ef4444;">Hedef bulunamadı veya gizlenmiş.</b>`;
+                }
+            } catch (err) { resDiv.innerHTML = `<b style="color:#ef4444;">Bağlantı hatası.</b>`; }
+            btn.innerHTML = "LOKASYON İSTİHBARATI TOPLA"; btn.style.background = "#8b5cf6";
+        }
+
+        // YENİ 2: Kriptografik Şifre Testi (SHA-1 Üretici)
+        async function sha1(str) {
+            const buffer = new TextEncoder("utf-8").encode(str);
+            const digest = await crypto.subtle.digest("SHA-1", buffer);
+            return Array.from(new Uint8Array(digest)).map( x => x.toString(16).padStart(2,'0') ).join('').toUpperCase();
+        }
+
+        async function runPasswordCheck() {
+            const password = document.getElementById('passInp').value;
+            if(!password) return alert('Lütfen bir şifre girin.');
+            const btn = event.target; btn.innerHTML = "ŞİFRELENİYOR... ⏳"; btn.style.background = "#db2777";
+            const resDiv = document.getElementById('passRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Şifreniz cihazınızda Hash'leniyor...";
+
+            try {
+                // Şifreyi tarayıcıda (güvenli bir şekilde) Hash'e dönüştür
+                const hash = await sha1(password);
+                const prefix = hash.substring(0, 5); // Sadece ilk 5 karakteri al (k-Anonymity)
+                const suffix = hash.substring(5);    // Geri kalanını tut
+                
+                resDiv.innerHTML = `<div class="step"><span style="color:#ec4899;">[+] SHA-1 Kriptolama:</span> ${hash} <br><span style="color:#cbd5e1; font-size:12px;">Sadece '${prefix}' API'ye gönderiliyor (Güvenli)...</span></div>`;
+                
+                const r = await fetch('/api/v1/osint/password/' + prefix);
+                const d = await r.json();
+                
+                if(d.status === "success") {
+                    // API'den gelen devasa listeyi satırlara böl
+                    const lines = d.data.split(/\r?\n/);
+                    let foundCount = 0;
+                    for(let line of lines) {
+                        const parts = line.split(':');
+                        if(parts[0].trim() === suffix) { foundCount = parseInt(parts[1].trim()); break; }
+                    }
+                    
+                    if(foundCount > 0) {
+                        resDiv.style.borderLeftColor = "#ef4444";
+                        resDiv.innerHTML += `<br><b style="color:#ef4444; font-size:18px;">🚨 DİKKAT: Bu şifre ${foundCount.toLocaleString()} kez HACKLENDİ!</b><br><span style="color:#cbd5e1;">Kesinlikle kullanmayın ve değiştirin.</span>`;
+                    } else {
+                        resDiv.style.borderLeftColor = "#10b981";
+                        resDiv.innerHTML += `<br><b style="color:#10b981; font-size:18px;">✅ MÜKEMMEL: Bu şifre çok güçlü!</b><br><span style="color:#cbd5e1;">Hiçbir global veri sızıntısında bulunamadı.</span>`;
+                    }
+                } else { resDiv.innerHTML += `<b style="color:#ef4444;">Sorgu hatası.</b>`; }
+            } catch (err) { resDiv.innerHTML += `<b style="color:#ef4444;">Bağlantı hatası.</b>`; }
+            btn.innerHTML = "ŞİFREYİ GÜVENLİ TEST ET"; btn.style.background = "#ec4899";
+        }
+
+        // YENİ 3: Ağ Zafiyet Tarayıcı (Port Scanner)
+        async function runPortScan() {
+            const hedef = document.getElementById('portInp').value.trim();
+            if(!hedef) return alert('Lütfen bir hedef girin.');
+            const btn = event.target; btn.innerHTML = "PORTLAR ZORLANIYOR... ⏳"; btn.style.background = "#e11d48";
+            const resDiv = document.getElementById('portRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Sunucu kapıları taranıyor (Bu işlem ağın hızına göre 3-5 saniye sürebilir)...";
+            
+            try {
+                const r = await fetch('/api/v1/osint/port/' + encodeURIComponent(hedef));
+                const d = await r.json();
+                if(d.status === "success") {
+                    if(d.portlar && d.portlar.length > 0) {
+                        resDiv.style.borderLeftColor = "#ef4444";
+                        let pList = d.portlar.map(p => `<span class="badge" style="background:#ef4444; font-size: 14px;">${p}</span><br>`).join('');
+                        resDiv.innerHTML = `<div class="step"><b style="color:#ef4444; font-size:18px;">🚨 ZAFİYET TESPİT EDİLDİ!</b></div><span style="color:#cbd5e1;">${d.message}</span><br><br>${pList}`;
+                    } else {
+                        resDiv.style.borderLeftColor = "#10b981";
+                        resDiv.innerHTML = `<div class="step"><b style="color:#10b981; font-size:18px;">✅ SİSTEM GÜVENLİ!</b></div><span style="color:#cbd5e1;">Taranan tüm kritik portlar (SSH, RDP, DB) kapalı/maskelenmiş.</span>`;
+                    }
+                } else {
+                    resDiv.innerHTML = `<b style="color:#f59e0b;">Tarama yapılamadı. Sunucu Firewall ile korunuyor olabilir.</b>`;
+                }
+            } catch (err) { resDiv.innerHTML = `<b style="color:#ef4444;">Bağlantı hatası.</b>`; }
+            btn.innerHTML = "AÇIK PORTLARI (ZAFİYET) TARA"; btn.style.background = "#f43f5e";
         }
     </script>
 </body>

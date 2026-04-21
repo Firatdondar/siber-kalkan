@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, UploadFile, File, Depends, Header
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-import hashlib, requests, re, imaplib, email
+import hashlib, requests, re, imaplib, email, socket
 from email.header import decode_header
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
@@ -166,17 +166,16 @@ async def dosya_analiz_et(file: UploadFile = File(...), x_vt_key: str = Header(N
     content = await file.read()
     file_hash = hashlib.sha256(content).hexdigest()
     
-    # 3.1 Adli Bilişim (Metadata) Çıkarımı
+    # Adli Bilişim (Metadata) Çıkarımı
     metadata_bilgisi = "Temel dosya analizi yapıldı."
     if file.filename.lower().endswith(".pdf"):
-        # PDF yapısının başlık verilerini bayt seviyesinde okuma (Kütüphanesiz hafif tarama)
         if b"/Creator" in content[:2000]: metadata_bilgisi = "PDF Metadata: Oluşturucu/Tarih izleri tespit edildi."
     elif file.filename.lower().endswith((".jpg", ".png")):
         metadata_bilgisi = f"Görsel Boyutu: {len(content)} byte. EXIF Header izleri mevcut."
         
-    if not x_vt_key or x_vt_key == "null": return {"sonuc": "Bilinmiyor", "detay": "API Key eksik!", "meta": metadata_bilgisi}
+    if not x_vt_key or x_vt_key == "null": return {"sonuc": "Bilinmiyor", "detay": "API Key eksik!", "meta": metadata_bilgisi, "hash": file_hash}
     
-    # 3.2 VirusTotal Sorgusu
+    # VirusTotal Sorgusu
     url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
     try:
         resp = requests.get(url, headers={"x-apikey": x_vt_key})
@@ -189,7 +188,7 @@ async def dosya_analiz_et(file: UploadFile = File(...), x_vt_key: str = Header(N
         return {"sonuc": "Hata", "detay": f"VT Hata Kodu: {resp.status_code}", "hash": file_hash, "meta": metadata_bilgisi}
     except Exception as e: return {"sonuc": "Hata", "detay": str(e), "hash": file_hash, "meta": metadata_bilgisi}
 
-# ================= 4. TELEGRAM BOT (OCR VE KARANTİNA DESTEKLİ) =================
+# ================= 4. TELEGRAM BOT =================
 @app.post("/api/v1/telegram/webhook/")
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     token = get_setting(db, "telegram_token")
@@ -234,7 +233,9 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
 
     return {"status": "ok"}
 
-# ================= 5. YENİ: VERİ SIZINTISI RADARI (OSINT) =================
+# ================= 5. YENİ EKLENEN ELİT ÖZELLİKLER (OSINT & PENTEST) =================
+
+# 5.1 E-Posta Veri Sızıntı Radarı (Dark Web)
 @app.get("/api/v1/osint/breach/{email}")
 def sızıntı_kontrol(email: str):
     try:
@@ -248,6 +249,51 @@ def sızıntı_kontrol(email: str):
         return {"status": "error"}
     except Exception as e:
         return {"status": "error"}
+
+# 5.2 IP/Domain İstihbarat Radarı
+@app.get("/api/v1/osint/ip/{hedef}")
+def ip_sorgula(hedef: str):
+    try:
+        hedef = hedef.replace("https://", "").replace("http://", "").split("/")[0]
+        resp = requests.get(f"http://ip-api.com/json/{hedef}").json()
+        if resp.get("status") == "success":
+            return {"status": "success", "data": resp}
+        return {"status": "error", "message": "Hedef bilgisi çekilemedi."}
+    except:
+        return {"status": "error", "message": "Bağlantı hatası."}
+
+# 5.3 Kriptografik Şifre Testi (k-Anonymity)
+@app.get("/api/v1/osint/password/{prefix}")
+def sifre_kontrol(prefix: str):
+    try:
+        resp = requests.get(f"https://api.pwnedpasswords.com/range/{prefix}")
+        if resp.status_code == 200:
+            return {"status": "success", "data": resp.text}
+        return {"status": "error", "message": "Sorgu yapılamadı."}
+    except:
+        return {"status": "error", "message": "Bağlantı hatası."}
+
+# 5.4 Ağ Zafiyet Tarayıcısı (Port Scanner)
+@app.get("/api/v1/osint/port/{hedef}")
+def port_tara(hedef: str):
+    hedef = hedef.replace("https://", "").replace("http://", "").split("/")[0]
+    common_ports = {21: "FTP", 22: "SSH", 23: "Telnet", 80: "HTTP", 443: "HTTPS", 3306: "MySQL", 3389: "RDP (Uzak Masaüstü)"}
+    acik_portlar = []
+    
+    for port, isim in common_ports.items():
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(0.5) # Hızlı tarama için yarım saniye mola
+            result = s.connect_ex((hedef, port))
+            if result == 0:
+                acik_portlar.append(f"Port {port} ({isim}) AÇIK! ⚠️")
+            s.close()
+        except:
+            pass
+            
+    if not acik_portlar:
+        return {"status": "success", "message": "Taranan kritik portlar kapalı/güvenli.", "portlar": []}
+    return {"status": "success", "message": f"{len(acik_portlar)} kritik port açık bırakılmış!", "portlar": acik_portlar}
 
 # ================= 6. İSTATİSTİK =================
 @app.get("/api/v1/sistem/istatistik/")
