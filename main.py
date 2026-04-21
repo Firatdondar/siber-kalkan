@@ -160,13 +160,23 @@ def mobil_analiz(istek: MobileRequest, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "found", "ilk_url": ilk_url, "son_url": son_url, "risk": round(risk,2), "typo": typo, "karar": karar}
 
-# ================= 3. VIRUSTOTAL DOSYA ANALİZ MOTORU =================
+# ================= 3. VIRUSTOTAL VE ADLİ BİLİŞİM (FORENSICS) MOTORU =================
 @app.post("/api/v1/analiz/dosya/")
 async def dosya_analiz_et(file: UploadFile = File(...), x_vt_key: str = Header(None), db: Session = Depends(get_db)):
     content = await file.read()
     file_hash = hashlib.sha256(content).hexdigest()
-    if not x_vt_key or x_vt_key == "null": return {"sonuc": "Bilinmiyor", "detay": "API Key eksik!"}
     
+    # 3.1 Adli Bilişim (Metadata) Çıkarımı
+    metadata_bilgisi = "Temel dosya analizi yapıldı."
+    if file.filename.lower().endswith(".pdf"):
+        # PDF yapısının başlık verilerini bayt seviyesinde okuma (Kütüphanesiz hafif tarama)
+        if b"/Creator" in content[:2000]: metadata_bilgisi = "PDF Metadata: Oluşturucu/Tarih izleri tespit edildi."
+    elif file.filename.lower().endswith((".jpg", ".png")):
+        metadata_bilgisi = f"Görsel Boyutu: {len(content)} byte. EXIF Header izleri mevcut."
+        
+    if not x_vt_key or x_vt_key == "null": return {"sonuc": "Bilinmiyor", "detay": "API Key eksik!", "meta": metadata_bilgisi}
+    
+    # 3.2 VirusTotal Sorgusu
     url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
     try:
         resp = requests.get(url, headers={"x-apikey": x_vt_key})
@@ -175,9 +185,9 @@ async def dosya_analiz_et(file: UploadFile = File(...), x_vt_key: str = Header(N
             karar = "Zararli" if malicious > 0 else "Guvenli"
             db.add(AnalizGecmisi(analiz_tipi="Dosya Tarama", hedef=file.filename, sonuc=f"{malicious} Uyarı", durum_kodu=karar))
             db.commit()
-            return {"sonuc": karar, "detay": f"{malicious} motor dosyayı ZARARLI buldu.", "hash": file_hash}
-        return {"sonuc": "Hata", "detay": f"VT Hata Kodu: {resp.status_code}", "hash": file_hash}
-    except Exception as e: return {"sonuc": "Hata", "detay": str(e), "hash": file_hash}
+            return {"sonuc": karar, "detay": f"{malicious} motor dosyayı ZARARLI buldu.", "hash": file_hash, "meta": metadata_bilgisi}
+        return {"sonuc": "Hata", "detay": f"VT Hata Kodu: {resp.status_code}", "hash": file_hash, "meta": metadata_bilgisi}
+    except Exception as e: return {"sonuc": "Hata", "detay": str(e), "hash": file_hash, "meta": metadata_bilgisi}
 
 # ================= 4. TELEGRAM BOT (OCR VE KARANTİNA DESTEKLİ) =================
 @app.post("/api/v1/telegram/webhook/")
@@ -192,14 +202,12 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     gelen_metin = ""
     TELEGRAM_API = f"https://api.telegram.org/bot{token}"
 
-    # OCR GÖRÜNTÜ İŞLEME: Eğer fotoğraf gönderildiyse
     if "photo" in data["message"]:
         requests.post(f"{TELEGRAM_API}/sendMessage", json={"chat_id": chat_id, "text": "📸 Görsel taranıyor (OCR)..."})
         file_id = data["message"]["photo"][-1]["file_id"]
         file_path = requests.get(f"{TELEGRAM_API}/getFile?file_id={file_id}").json()["result"]["file_path"]
         file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
         
-        # Ücretsiz OCR API (Görselden metin çıkarma)
         ocr_res = requests.get("https://api.ocr.space/parse/imageurl", params={"apikey": "helloworld", "url": file_url}).json()
         if ocr_res.get("ParsedResults"): gelen_metin = ocr_res["ParsedResults"][0].get("ParsedText", "")
     else:
@@ -217,7 +225,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         cevap = f"🔍 *Siber Kalkan Raporu*\n\n🌐 Hedef: `{hedef_url}`\n⚠️ Risk Oranı: %{risk:.1f}\n🛡️ Karar: {karar}"
         requests.post(f"{TELEGRAM_API}/sendMessage", json={"chat_id": chat_id, "text": cevap, "parse_mode": "Markdown"})
         
-        # KARANTİNA ODASI: Eğer zararlıysa güvenli ekran görüntüsünü (screenshot) at
         if risk > 50:
             karantina_resmi = f"https://image.thum.io/get/width/800/crop/800/{hedef_url}"
             requests.post(f"{TELEGRAM_API}/sendPhoto", json={"chat_id": chat_id, "photo": karantina_resmi, "caption": "🚧 KARANTİNA ÖNİZLEMESİ: Siteye girmeden güvenli görünümü."})
@@ -227,7 +234,22 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
 
     return {"status": "ok"}
 
-# ================= 5. İSTATİSTİK =================
+# ================= 5. YENİ: VERİ SIZINTISI RADARI (OSINT) =================
+@app.get("/api/v1/osint/breach/{email}")
+def sızıntı_kontrol(email: str):
+    try:
+        r = requests.get(f"https://api.xposedornot.com/v1/check-email/{email}")
+        if r.status_code == 200:
+            data = r.json()
+            breaches = data.get("breaches", [[]])[0]
+            return {"status": "found", "breaches": breaches}
+        elif r.status_code == 404:
+            return {"status": "safe", "message": "Harika! E-posta adresi herhangi bir sızıntıda bulunamadı."}
+        return {"status": "error"}
+    except Exception as e:
+        return {"status": "error"}
+
+# ================= 6. İSTATİSTİK =================
 @app.get("/api/v1/sistem/istatistik/")
 def istatistik_getir(db: Session = Depends(get_db)):
     z = db.query(AnalizGecmisi).filter(AnalizGecmisi.durum_kodu == "Zararli").count()

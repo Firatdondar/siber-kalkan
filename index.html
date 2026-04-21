@@ -7,6 +7,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#050b14">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         
@@ -39,6 +40,11 @@
         textarea:focus { outline: none; border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
         .btn-run { background: #10b981; color: #050b14; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; width: 100%; margin-top: 20px; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;}
         .btn-run:hover { background: #34d399; transform: scale(1.02); }
+        
+        /* YENİ: PDF Butonları ve Badge Tasarımı */
+        .btn-pdf { background: #6366f1; color: white; font-size: 14px; width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.3s; }
+        .btn-pdf:hover { background: #4f46e5; }
+        .badge { background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; margin-right: 5px; display: inline-block; margin-bottom: 5px;}
         
         .result-box { background: #050b14; border-radius: 10px; padding: 25px; margin-top: 25px; display: none; border-left: 4px solid #10b981; }
         .step { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed #1e293b; animation: slideIn 0.4s ease-out backwards; }
@@ -177,20 +183,28 @@
                     <button class="btn-connect" style="background:#f97316; width:100%;" onclick="saveVTKey()">API Key'i Sisteme Tanımla</button>
                 </div>
 
-                <button class="accordion active" style="border-left: 4px solid #0ea5e9;">📁 2. Adım: VirusTotal Dosya Taraması (PDF, EXE)</button>
+                <button class="accordion active" style="border-left: 4px solid #0ea5e9;">📁 2. Dosya & Adli Bilişim Analizi</button>
                 <div class="panel" style="display:block; border-left-color: #0ea5e9;">
-                    <p>Sistem dosyayı doğrudan sunucuya yüklemez. Kendi cihazınızda Hash (kimlik) değeri çıkarılarak VirusTotal'e güvenle sorulur.</p>
+                    <p style="font-size: 13px; color:#94a3b8;">Sistem dosyayı VT'de aratırken aynı zamanda gizli Metadata (Adli Bilişim) izlerini de çıkarır.</p>
                     <input type="file" id="fileUpload" class="integration-input" style="background: #1e293b; cursor: pointer; padding: 15px;">
-                    <button class="btn-run" onclick="runFileAnalysis()" style="margin-top:15px; background:#0ea5e9;">DOSYAYI VIRUSTOTAL'DE TARAT</button>
+                    <button class="btn-run" onclick="runFileAnalysis()" style="margin-top:15px; background:#0ea5e9;">DOSYAYI VE İZLERİ TARAT</button>
                     <div id="fileRes" class="result-box"></div>
                 </div>
 
-                <button class="accordion active" style="border-left: 4px solid #10b981;">📝 3. Adım: Yapay Zeka Link & Metin Taraması</button>
+                <button class="accordion active" style="border-left: 4px solid #10b981;">📝 3. Yapay Zeka Link & Metin Taraması</button>
                 <div class="panel" style="display:block; border-left-color: #10b981;">
                     <p>Sizi şüphelendiren bir internet sitesi linkini veya yönlendirme mesajını test edin.</p>
                     <textarea id="mobInp" rows="3" placeholder="Örn: Hesabınız kısıtlandı! Açmak için tıklayın: http://guvenli-banka-guncelleme.com"></textarea>
                     <button class="btn-run" onclick="runMobile()">LİNKİ / METNİ ANALİZ ET</button>
                     <div id="mobRes" class="result-box"></div>
+                </div>
+
+                <button class="accordion active" style="border-left: 4px solid #ef4444;">🕵️‍♂️ 4. Veri Sızıntısı Radarı (Dark Web)</button>
+                <div class="panel" style="display:block; border-left-color: #ef4444;">
+                    <p style="font-size: 13px; color:#94a3b8;">Sizin veya müşterinizin e-posta adresi geçmişte hacklendi mi? Açık kaynaklı OSINT veritabanında arayın.</p>
+                    <input type="email" id="breachInp" class="integration-input" placeholder="Test edilecek e-posta adresi (Örn: test@gmail.com)">
+                    <button class="btn-run" onclick="runBreachCheck()" style="margin-top:15px; background:#ef4444; color:white;">SIZINTILARI KONTROL ET</button>
+                    <div id="breachRes" class="result-box"></div>
                 </div>
 
             </div>
@@ -239,6 +253,57 @@
             }
         });
 
+        // YENİ: PDF İNDİRME FONKSİYONU
+        function indirPDF(hedef, risk, karar, detay) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(14, 165, 233); doc.setFontSize(22); doc.text("SIBER KALKAN", 105, 20, null, null, "center");
+            doc.setTextColor(255, 255, 255); doc.setFontSize(12); doc.text("RESMI OLAY MUDAHALE RAPORU", 105, 30, null, null, "center");
+            
+            doc.setTextColor(0, 0, 0); doc.setFontSize(12);
+            doc.text("Tarih: " + new Date().toLocaleString(), 20, 55);
+            doc.text("Analiz Edilen Hedef: " + hedef.substring(0, 70), 20, 65);
+            doc.text("Tespit Edilen Risk: " + risk, 20, 75);
+            
+            let renk = karar.includes("ZARARLI") ? [239, 68, 68] : [16, 185, 129];
+            doc.setTextColor(renk[0], renk[1], renk[2]);
+            doc.setFontSize(16); doc.text("Sistem Karari: " + karar, 20, 90);
+            
+            doc.setTextColor(100, 100, 100); doc.setFontSize(11);
+            doc.text("Detayli Bulgular:", 20, 105);
+            doc.setFontSize(10); doc.text(detay, 20, 115, {maxWidth: 170});
+            
+            doc.save("SiberKalkan_Rapor_" + Date.now() + ".pdf");
+        }
+
+        // YENİ: OSINT VERİ SIZINTISI FONKSİYONU
+        async function runBreachCheck() {
+            const email = document.getElementById('breachInp').value.trim();
+            if(!email || !email.includes('@')) return alert('Geçerli bir mail girin!');
+            
+            const btn = event.target; btn.innerHTML = "RADAR TARANIYOR... [ ▓▓▓▓▓▓▓░░░ ]"; btn.style.background = "#b91c1c";
+            const resDiv = document.getElementById('breachRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Uluslararası veritabanları sorgulanıyor...";
+            
+            try {
+                const r = await fetch('/api/v1/osint/breach/' + email);
+                const d = await r.json();
+                
+                if(d.status === "found") {
+                    resDiv.style.borderLeftColor = "#ef4444";
+                    let badgeHtml = ""; d.breaches.forEach(b => badgeHtml += `<span class="badge">${b}</span>`);
+                    resDiv.innerHTML = `<div class="step"><b style="color:#ef4444; font-size:18px;">🚨 DİKKAT: Verileriniz Çalınmış!</b><br><br><span style="color:#cbd5e1;">Bu e-posta adresi aşağıdaki veri ihlallerinde tespit edildi. Şifrelerinizi acilen değiştirin:</span><br><br>${badgeHtml}</div>`;
+                } else if(d.status === "safe") {
+                    resDiv.style.borderLeftColor = "#10b981";
+                    resDiv.innerHTML = `<b style="color:#10b981;">✅ ${d.message}</b>`;
+                } else {
+                    resDiv.innerHTML = `<b style="color:#f59e0b;">Sorgulama yapılamadı.</b>`;
+                }
+            } catch (err) { resDiv.innerHTML = `<div class="step" style="color:#ef4444;">Bağlantı hatası.</div>`; }
+            btn.innerHTML = "SIZINTILARI KONTROL ET"; btn.style.background = "#ef4444";
+        }
+
         async function runFileAnalysis() {
             const fileInp = document.getElementById('fileUpload');
             if(!fileInp.files.length) return alert('Lütfen taramak için bir dosya seçin.');
@@ -265,18 +330,21 @@
                 let color = d.sonuc === "Zararli" ? "#ef4444" : (d.sonuc === "Guvenli" ? "#10b981" : "#f59e0b");
                 resDiv.style.borderLeftColor = color;
                 
+                // YENİ: Metadata Gösterimi ve PDF Butonu eklendi
                 resDiv.innerHTML = `
+                    <div class="step"><span style="color:#a855f7;">[+] Adli Bilişim (Metadata) İzleri:</span> <br> <span style="color:#cbd5e1; font-size:13px;">${d.meta || 'Bulunamadi'}</span></div>
                     <div class="step"><span style="color:#0ea5e9;">[+] SHA-256 Kimliği Çıkarıldı:</span> <br> <span style="color:#64748b; font-size:12px;">${d.hash}</span></div>
                     <div class="step" style="border:none;">
                         <b style="color:${color}; font-size:20px;">[SİSTEM KARARI] ${d.sonuc.toUpperCase()}</b><br>
                         <span style="font-size:14px; color:#cbd5e1;">${d.detay}</span>
                     </div>
+                    <button class="btn-pdf" onclick="indirPDF('${fileInp.files[0].name}', '${d.sonuc}', '${d.sonuc.toUpperCase()}', 'Adli Bilisim: ${d.meta || 'Yok'} | Hash: ${d.hash} | VT Raporu: ${d.detay}')">📄 PDF RAPORUNU İNDİR</button>
                 `;
             } catch (err) {
                 resDiv.innerHTML = `<div class="step" style="color:#ef4444;">Analiz sırasında sunucu ile bağlantı koptu.</div>`;
             }
             
-            btn.innerHTML = "DOSYAYI VIRUSTOTAL'DE TARAT";
+            btn.innerHTML = "DOSYAYI VE İZLERİ TARAT";
             btn.style.background = "#0ea5e9";
         }
 
@@ -300,6 +368,8 @@
                     let color = d.karar === "Zararli" ? "#ef4444" : "#10b981";
                     resDiv.style.borderLeftColor = color;
                     let typoHtml = d.typo ? `<div class="step"><span style="color:#f59e0b;">[UYARI] Marka Taklidi (Typosquatting):</span> Bilinen marka adı manipüle edilmiş!</div>` : '';
+                    
+                    // YENİ: PDF Butonu Eklendi
                     resDiv.innerHTML = `
                         <div class="step"><span style="color:#0ea5e9;">[+] Regex Link Ayıklama:</span> Başarılı.<br> <span style="color:#64748b;">> ${d.ilk_url}</span></div>
                         <div class="step"><span style="color:#0ea5e9;">[+] Unshorten (Kısa Link Çözümü):</span> Tamamlandı.<br> <span style="color:#64748b;">> Hedef: ${d.son_url}</span></div>
@@ -308,6 +378,7 @@
                             <b style="color:${color}; font-size:20px;">[AI KARARI] %${d.risk} RİSK - ${d.karar.toUpperCase()}</b><br>
                             <span style="font-size:12px; color:#475569;">[Sistem veritabanına işlendi]</span>
                         </div>
+                        <button class="btn-pdf" onclick="indirPDF('${d.son_url}', '%${d.risk}', '${d.karar.toUpperCase()}', 'Metin İcinde Supheli Link Tespit Edildi. Marka Taklidi: ${d.typo ? 'Var' : 'Yok'}')">📄 PDF RAPORUNU İNDİR</button>
                     `;
                 }
                 btn.innerHTML = "LİNKİ / METNİ ANALİZ ET";
