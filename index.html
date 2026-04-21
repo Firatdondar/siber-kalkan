@@ -7,8 +7,7 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#050b14">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-        /* 1. SİSTEM: KUTU MODELİ (Taşmaları kökten çözer) */
+    <style>
         * { box-sizing: border-box; }
         
         body { font-family: 'Consolas', 'Segoe UI', monospace; background: #050b14; color: #e2e8f0; margin: 0; padding: 20px; overflow-x: hidden; width: 100%; }
@@ -18,7 +17,6 @@
         
         .selection-container { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 50px; }
         
-        /* 2. KARTLAR: Sabit 400px yerine esnek %100 genişlik */
         .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 20px; padding: 40px; width: 100%; max-width: 400px; text-align: center; cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
         .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent); transform: translateX(-100%); transition: 0.6s; }
         .card:hover::before { transform: translateX(100%); }
@@ -36,7 +34,6 @@
         .btn-back { background: transparent; color: #94a3b8; border: 1px solid #334155; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 30px; transition: 0.3s; }
         .btn-back:hover { background: #1e293b; color: white; }
 
-        /* 3. KONTEYNER: Sabit 450px yerine minimum 280px */
         .container-box { flex: 2; min-width: 280px; width: 100%; background: #0f172a; border-radius: 16px; padding: 35px; border: 1px solid #1e293b; }
         textarea { width: 100%; padding: 15px; border-radius: 10px; background: #050b14; border: 1px solid #334155; color: #10b981; font-family: monospace; font-size: 15px; resize: none; box-sizing: border-box; }
         textarea:focus { outline: none; border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
@@ -60,11 +57,9 @@
         .btn-connect:hover { filter: brightness(1.2); }
         .guide-box { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 15px; margin-top: 15px; }
         
-        /* 4. METİN TAŞMALARINI ENGELLE */
         .code-block { background: #000; color: #a78bfa; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 13px; overflow-x: auto; border-left: 3px solid #8b5cf6; white-space: pre-wrap; word-break: break-all;}
         .section-title { color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; margin-top: 30px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
 
-        /* 5. MOBİL UYUMLULUK SİHRİ (Sola/Sağa kaymayı tamamen sıfırlar) */
         @media (max-width: 768px) {
             body { padding: 15px; }
             .header h1 { font-size: 22px; text-align: center; width: 100%; }
@@ -117,7 +112,7 @@
                         <div class="integration-step"><span>2.</span> Makro Ekle > Tetikleyici: <b>Cihaz Bildirimi</b> (İzlemek istediğiniz uygulamaları seçin: WhatsApp vb.)</div>
                         <div class="integration-step"><span>3.</span> Eylem > Uygulamalar > <b>HTTP İsteği Gönder (POST)</b> seçin.</div>
                         <div class="integration-step"><span>4. API URL'si:</span>
-                            <input type="text" class="integration-input" value="https://siber-kalkan-api.com/api/v1/analiz/mobil/" readonly>
+                            <input type="text" class="integration-input" value="https://siber-kalkan.onrender.com/api/v1/analiz/mobil/" readonly>
                         </div>
                         <div class="integration-step"><span>5. Veri (JSON):</span> İstek gövdesine şu kodu yapıştırıp kaydedin:
                             <div class="code-block">{"message": "[not_title] - [not_text]"}</div>
@@ -140,36 +135,10 @@
                     <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" class="app-icon">Telegram (Analiz Botu)
                 </button>
                 <div class="panel" style="border-left-color: #0088cc;">
-                    <div class="integration-step">BotFather'dan aldığınız HTTP API Token'ı buraya girerek şüpheli mesajları Telegram'dan API'ye iletin.</div>
-                    <input type="text" class="integration-input" placeholder="Örn: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
-                    <button class="btn-connect" style="background:#0088cc;">Telegram Botu Başlat</button>
-                </div>
-
-                <button class="accordion" style="border-left: 4px solid #EA4335;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/5968/5968534.png" class="app-icon">Gmail (Spam Avcısı)
-                </button>
-                <div class="panel" style="border-left-color: #EA4335;">
-                    <div class="integration-step">Gelen kutunuzu taramak için Google Hesabı > Güvenlik > 16 Haneli Uygulama Şifrenizi girin.</div>
-                    <input type="password" class="integration-input" placeholder="16 Haneli Güvenlik Şifresi">
-                    <button class="btn-connect" style="background:#EA4335;">Gmail Tarayıcısını Aktifleştir</button>
-                </div>
-
-                <button class="accordion" style="border-left: 4px solid #E01E5A;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/3800/3800024.png" class="app-icon">Slack (Kurumsal Çalışma Alanı)
-                </button>
-                <div class="panel" style="border-left-color: #E01E5A;">
-                    <div class="integration-step">Slack çalışma alanınızdaki "Incoming Webhooks" uygulamasından aldığınız URL'yi yapıştırın.</div>
-                    <input type="text" class="integration-input" placeholder="https://hooks.slack.com/services/...">
-                    <button class="btn-connect" style="background:#E01E5A;">Slack'e Bağla</button>
-                </div>
-
-                <button class="accordion" style="border-left: 4px solid #6264A7;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/906/906349.png" class="app-icon">Microsoft Teams (SOC Alarmları)
-                </button>
-                <div class="panel" style="border-left-color: #6264A7;">
-                    <div class="integration-step">Teams kanalınızdan "Incoming Webhook" oluşturup bağlantı adresini girin.</div>
-                    <input type="text" class="integration-input" placeholder="Teams Webhook URL...">
-                    <button class="btn-connect" style="background:#6264A7;">Teams Entegrasyonu Ekle</button>
+                    <div class="integration-step">BotFather'dan aldığınız HTTP API Token'ı buraya girerek şüpheli mesajları Telegram'dan API'ye iletin. Sistem arkaplanda Webhook bağlantısını otomatik kuracaktır.</div>
+                    <input type="text" id="tgTokenInp" class="integration-input" placeholder="Örn: 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ">
+                    <button class="btn-connect" style="background:#0088cc;" onclick="saveTelegramKey()">Telegram Botu Sisteme Tanımla</button>
+                    <div id="tgRes" style="margin-top:10px; color:#10b981; font-weight:bold; display:none;"></div>
                 </div>
 
             </div>
@@ -237,7 +206,7 @@
                 if(window.myChartObj) window.myChartObj.destroy();
                 window.myChartObj = new Chart(document.getElementById('myChart'), { type:'doughnut', data:{ labels:['Riskli','Güvenli','Şüpheli'], datasets:[{ data:[d.zararli, d.guvenli, d.supheli], backgroundColor:['#ef4444','#10b981','#f59e0b'], borderWidth:0 }] }, options:{ color:'#fff', cutout: '75%' }});
             } catch(e) {
-                console.log("Grafik verisi çekilemedi. Veritabanını (siber_guvenlik_analiz.db) silip uvicorn'u yeniden başlatın.");
+                console.log("Grafik verisi çekilemedi.");
             }
         }
 
@@ -249,6 +218,42 @@
             } else {
                 alert('Lütfen geçerli bir VirusTotal API Key girin.');
             }
+        }
+
+        /* YENİ EKLENEN TELEGRAM KAYDETME FONKSİYONU */
+        async function saveTelegramKey() {
+            const token = document.getElementById('tgTokenInp').value.trim();
+            // Sistem şu anki canlı linkini (https://siber-kalkan.onrender.com) otomatik alır
+            const renderUrl = window.location.origin; 
+            
+            if(token.length < 20) return alert('Lütfen BotFather\'dan aldığınız geçerli bir token girin.');
+            
+            const btn = event.target;
+            btn.innerHTML = "Kaydediliyor ve Webhook Ayarlanıyor... ⏳";
+            
+            try {
+                const r = await fetch('/api/v1/ayarlar/telegram/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ telegram_token: token, render_url: renderUrl })
+                });
+                const d = await r.json();
+                
+                let resDiv = document.getElementById('tgRes');
+                resDiv.style.display = "block";
+                
+                if(d.status === "success") {
+                    resDiv.style.color = "#10b981";
+                    resDiv.innerHTML = "✅ " + d.message;
+                } else {
+                    resDiv.style.color = "#ef4444";
+                    resDiv.innerHTML = "❌ " + d.message;
+                }
+            } catch (err) {
+                alert('Sunucuya bağlanılamadı.');
+            }
+            
+            btn.innerHTML = "Telegram Botu Sisteme Tanımla";
         }
 
         window.addEventListener('load', () => {

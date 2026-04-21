@@ -28,6 +28,12 @@ class AnalizGecmisi(Base):
     durum_kodu = Column(String(20))
     tarih = Column(DateTime, default=datetime.utcnow)
 
+# YENİ EKLENEN: Telegram token gibi ayarları tutacak tablo
+class Ayar(Base):
+    __tablename__ = "ayarlar"
+    anahtar = Column(String(50), primary_key=True, index=True)
+    deger = Column(String(255))
+
 Base.metadata.create_all(bind=engine)
 def get_db():
     db = SessionLocal()
@@ -58,6 +64,30 @@ def get_manifest(): return FileResponse("manifest.json")
 
 @app.get("/sw.js")
 def get_sw(): return FileResponse("sw.js")
+
+# ================= YENİ: AYAR KAYDETME MOTORU (TELEGRAM İÇİN) =================
+class TelegramAyarRequest(BaseModel):
+    telegram_token: str
+    render_url: str
+
+@app.post("/api/v1/ayarlar/telegram/")
+def telegram_ayar_kaydet(istek: TelegramAyarRequest, db: Session = Depends(get_db)):
+    ayar = db.query(Ayar).filter(Ayar.anahtar == "telegram_token").first()
+    if not ayar:
+        ayar = Ayar(anahtar="telegram_token", deger=istek.telegram_token)
+        db.add(ayar)
+    else:
+        ayar.deger = istek.telegram_token
+    db.commit()
+    
+    # Render URL'sini kullanarak Telegram'a otomatik Webhook kur!
+    webhook_url = f"{istek.render_url}/api/v1/telegram/webhook/"
+    telegram_api = f"https://api.telegram.org/bot{istek.telegram_token}/setWebhook?url={webhook_url}"
+    try:
+        resp = requests.get(telegram_api)
+        return {"status": "success", "message": "Telegram Bot başarıyla bağlandı ve Webhook ayarlandı!"}
+    except Exception as e:
+        return {"status": "error", "message": f"Token kaydedildi ama Webhook kurulamadı: {e}"}
 
 # ================= 1. BİLDİRİM VE MESAJ MOTORU (YAPAY ZEKA) =================
 class MobileRequest(BaseModel): message: str
@@ -128,3 +158,42 @@ def istatistik_getir(db: Session = Depends(get_db)):
     z = db.query(AnalizGecmisi).filter(AnalizGecmisi.durum_kodu == "Zararli").count()
     g = db.query(AnalizGecmisi).filter(AnalizGecmisi.durum_kodu == "Guvenli").count()
     return {"zararli": max(z, 0), "guvenli": max(g, 0), "supheli": 0}
+
+# ================= 4. TELEGRAM BOT ENTEGRASYONU (DİNAMİK) =================
+@app.post("/api/v1/telegram/webhook/")
+async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
+    try:
+        # Veritabanından kaydettiğimiz tokeni çekiyoruz
+        ayar = db.query(Ayar).filter(Ayar.anahtar == "telegram_token").first()
+        if not ayar or not ayar.deger:
+            return {"status": "error", "message": "Sistemde kayitli Telegram Token yok."}
+            
+        TELEGRAM_BOT_TOKEN = ayar.deger
+        TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
+
+        data = await request.json()
+        
+        if "message" in data and "text" in data["message"]:
+            chat_id = data["message"]["chat"]["id"]
+            gelen_metin = data["message"]["text"]
+            
+            urls = re.findall(r'(https?://[^\s]+)', gelen_metin)
+            
+            if not urls:
+                cevap = "🛡️ *Siber Kalkan:* Gönderdiğiniz metinde analiz edilecek bir link bulunamadı."
+            else:
+                hedef_url = urls[0]
+                risk = ml_model.predict_proba([extract_url_features(hedef_url)])[0][1] * 100
+                karar = "🔴 ZARARLI" if risk > 50 else "🟢 GÜVENLİ"
+                
+                cevap = f"🔍 *Siber Kalkan Analiz Raporu*\n\n🌐 Hedef: `{hedef_url}`\n⚠️ Risk Oranı: %{risk:.1f}\n🛡️ Karar: {karar}"
+                
+                db.add(AnalizGecmisi(analiz_tipi="Telegram Bot", hedef=hedef_url, sonuc=f"%{risk:.1f} Risk", durum_kodu="Zararli" if risk > 50 else "Guvenli"))
+                db.commit()
+
+            requests.post(f"{TELEGRAM_API_URL}/sendMessage", json={"chat_id": chat_id, "text": cevap, "parse_mode": "Markdown"})
+            
+    except Exception as e:
+        print("Telegram Webhook Hatası:", str(e))
+        
+    return {"status": "ok"}
