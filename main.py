@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Request, UploadFile, File, Depends, Header
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, Request, UploadFile, File, Depends, Header, Form
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
-import hashlib, requests, re, imaplib, email, socket
+import hashlib, requests, re, imaplib, email, socket, io
 from email.header import decode_header
 from datetime import datetime
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
@@ -69,6 +69,20 @@ def get_manifest(): return FileResponse("manifest.json")
 
 @app.get("/sw.js")
 def get_sw(): return FileResponse("sw.js")
+
+# ================= 0. SİBER TUZAK (HONEYPOT) YENİ! =================
+@app.get("/wp-admin")
+@app.post("/wp-admin")
+@app.get("/gizli-veritabani")
+@app.get("/admin")
+def honeypot_tetikle(request: Request, db: Session = Depends(get_db)):
+    # Biri bu sayfalara girmeye çalışırsa arka planda sessizce fişlenir
+    ip = request.client.host
+    path = request.url.path
+    send_discord_alert("HONEYPOT (Siber Tuzak) Tetiklendi!", ip, f"Saldırgan şu yetkisiz dizine girmeye çalıştı: {path}")
+    db.add(AnalizGecmisi(analiz_tipi="Honeypot (Aktif Savunma)", hedef=ip, sonuc=f"Tuzak Tetiklendi: {path}", durum_kodu="Zararli"))
+    db.commit()
+    return {"status": "error", "message": "HTTP 403: Access Denied. Sızma girişimi tespit edildi ve yetkili mercilere loglandı."}
 
 # ================= AYAR KAYDETME MOTORU =================
 class SistemAyarRequest(BaseModel):
@@ -166,7 +180,6 @@ async def dosya_analiz_et(file: UploadFile = File(...), x_vt_key: str = Header(N
     content = await file.read()
     file_hash = hashlib.sha256(content).hexdigest()
     
-    # Adli Bilişim (Metadata) Çıkarımı
     metadata_bilgisi = "Temel dosya analizi yapıldı."
     if file.filename.lower().endswith(".pdf"):
         if b"/Creator" in content[:2000]: metadata_bilgisi = "PDF Metadata: Oluşturucu/Tarih izleri tespit edildi."
@@ -175,7 +188,6 @@ async def dosya_analiz_et(file: UploadFile = File(...), x_vt_key: str = Header(N
         
     if not x_vt_key or x_vt_key == "null": return {"sonuc": "Bilinmiyor", "detay": "API Key eksik!", "meta": metadata_bilgisi, "hash": file_hash}
     
-    # VirusTotal Sorgusu
     url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
     try:
         resp = requests.get(url, headers={"x-apikey": x_vt_key})
@@ -233,69 +245,93 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
 
     return {"status": "ok"}
 
-# ================= 5. YENİ EKLENEN ELİT ÖZELLİKLER (OSINT & PENTEST) =================
-
-# 5.1 E-Posta Veri Sızıntı Radarı (Dark Web)
+# ================= 5. OSINT & PENTEST ÖZELLİKLERİ =================
 @app.get("/api/v1/osint/breach/{email}")
 def sızıntı_kontrol(email: str):
     try:
         r = requests.get(f"https://api.xposedornot.com/v1/check-email/{email}")
         if r.status_code == 200:
-            data = r.json()
-            breaches = data.get("breaches", [[]])[0]
-            return {"status": "found", "breaches": breaches}
+            return {"status": "found", "breaches": r.json().get("breaches", [[]])[0]}
         elif r.status_code == 404:
             return {"status": "safe", "message": "Harika! E-posta adresi herhangi bir sızıntıda bulunamadı."}
         return {"status": "error"}
-    except Exception as e:
-        return {"status": "error"}
+    except Exception as e: return {"status": "error"}
 
-# 5.2 IP/Domain İstihbarat Radarı
 @app.get("/api/v1/osint/ip/{hedef}")
 def ip_sorgula(hedef: str):
     try:
         hedef = hedef.replace("https://", "").replace("http://", "").split("/")[0]
         resp = requests.get(f"http://ip-api.com/json/{hedef}").json()
-        if resp.get("status") == "success":
-            return {"status": "success", "data": resp}
+        if resp.get("status") == "success": return {"status": "success", "data": resp}
         return {"status": "error", "message": "Hedef bilgisi çekilemedi."}
-    except:
-        return {"status": "error", "message": "Bağlantı hatası."}
+    except: return {"status": "error", "message": "Bağlantı hatası."}
 
-# 5.3 Kriptografik Şifre Testi (k-Anonymity)
 @app.get("/api/v1/osint/password/{prefix}")
 def sifre_kontrol(prefix: str):
     try:
         resp = requests.get(f"https://api.pwnedpasswords.com/range/{prefix}")
-        if resp.status_code == 200:
-            return {"status": "success", "data": resp.text}
+        if resp.status_code == 200: return {"status": "success", "data": resp.text}
         return {"status": "error", "message": "Sorgu yapılamadı."}
-    except:
-        return {"status": "error", "message": "Bağlantı hatası."}
+    except: return {"status": "error", "message": "Bağlantı hatası."}
 
-# 5.4 Ağ Zafiyet Tarayıcısı (Port Scanner)
 @app.get("/api/v1/osint/port/{hedef}")
 def port_tara(hedef: str):
     hedef = hedef.replace("https://", "").replace("http://", "").split("/")[0]
-    common_ports = {21: "FTP", 22: "SSH", 23: "Telnet", 80: "HTTP", 443: "HTTPS", 3306: "MySQL", 3389: "RDP (Uzak Masaüstü)"}
+    common_ports = {21: "FTP", 22: "SSH", 23: "Telnet", 80: "HTTP", 443: "HTTPS", 3306: "MySQL", 3389: "RDP"}
     acik_portlar = []
     
     for port, isim in common_ports.items():
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(0.5) # Hızlı tarama için yarım saniye mola
-            result = s.connect_ex((hedef, port))
-            if result == 0:
-                acik_portlar.append(f"Port {port} ({isim}) AÇIK! ⚠️")
+            s.settimeout(0.5) 
+            if s.connect_ex((hedef, port)) == 0: acik_portlar.append(f"Port {port} ({isim}) AÇIK! ⚠️")
             s.close()
-        except:
-            pass
+        except: pass
             
-    if not acik_portlar:
-        return {"status": "success", "message": "Taranan kritik portlar kapalı/güvenli.", "portlar": []}
+    if not acik_portlar: return {"status": "success", "message": "Taranan kritik portlar kapalı/güvenli.", "portlar": []}
     return {"status": "success", "message": f"{len(acik_portlar)} kritik port açık bırakılmış!", "portlar": acik_portlar}
 
-# ================= 6. İSTATİSTİK =================
+# ================= 6. YENİ EKLENEN ELİT ÖZELLİKLER (SAST & STEGANOGRAFİ) =================
+
+# 6.1 SAST (Kaynak Kod Zafiyet Tarayıcısı)
+class KodAnalizRequest(BaseModel): kod: str
+@app.post("/api/v1/analiz/kod/")
+def kod_analiz(istek: KodAnalizRequest):
+    kod = istek.kod
+    bulgular = []
+    for i, line in enumerate(kod.split('\n')):
+        if re.search(r'(os\.system|exec|eval)\(', line):
+            bulgular.append(f"Satır {i+1}: Kritik - Komut Enjeksiyonu (RCE) riski.")
+        if re.search(r'(SELECT|UPDATE|DELETE|INSERT).*WHERE.*=.*\+', line, re.IGNORECASE) or "$_" in line:
+            bulgular.append(f"Satır {i+1}: Yüksek - SQL Enjeksiyonu (SQLi) zafiyeti olabilir.")
+        if re.search(r'(<script>|innerHTML|document\.write)', line, re.IGNORECASE):
+            bulgular.append(f"Satır {i+1}: Orta - XSS (Cross-Site Scripting) zafiyeti.")
+        if re.search(r'(password|secret|api_key)\s*=\s*[\'"][^\'"]+[\'"]', line, re.IGNORECASE):
+            bulgular.append(f"Satır {i+1}: Yüksek - Kod içine gömülü şifre (Hardcoded Secret).")
+            
+    if not bulgular: return {"status": "clean", "message": "Kod temiz. Belirgin bir güvenlik zafiyeti bulunamadı."}
+    return {"status": "vuln", "bulgular": bulgular}
+
+# 6.2 STEGANOGRAFİ (Resim İçine Gizli Veri Gömme ve Okuma)
+@app.post("/api/v1/stego/gizle/")
+async def stego_gizle(gizli_mesaj: str = Form(...), file: UploadFile = File(...)):
+    content = await file.read()
+    ayirici = b"||SIBERKALKAN||"
+    yeni_icerik = content + ayirici + gizli_mesaj.encode('utf-8') + ayirici
+    return StreamingResponse(io.BytesIO(yeni_icerik), media_type="image/png", headers={"Content-Disposition": f"attachment; filename=gizli_{file.filename}"})
+
+@app.post("/api/v1/stego/oku/")
+async def stego_oku(file: UploadFile = File(...)):
+    content = await file.read()
+    ayirici = b"||SIBERKALKAN||"
+    if ayirici in content:
+        parcalar = content.split(ayirici)
+        if len(parcalar) >= 3:
+            mesaj = parcalar[-2].decode('utf-8', errors='ignore')
+            return {"status": "success", "mesaj": mesaj}
+    return {"status": "error", "message": "Bu resmin içinde gizli bir mesaj bulunamadı."}
+
+# ================= 7. İSTATİSTİK =================
 @app.get("/api/v1/sistem/istatistik/")
 def istatistik_getir(db: Session = Depends(get_db)):
     z = db.query(AnalizGecmisi).filter(AnalizGecmisi.durum_kodu == "Zararli").count()

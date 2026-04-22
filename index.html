@@ -155,6 +155,15 @@
                     <div id="emailRes" class="result-box"></div>
                 </div>
 
+                <div class="section-title">3. Aktif Savunma (Honeypot)</div>
+                <button class="accordion" style="border-left: 4px solid #fbbf24;">🍯 Siber Tuzak (Honeypot) Durumu</button>
+                <div class="panel" style="border-left-color: #fbbf24;">
+                    <p>Sisteminizde Honeypot (Siber Tuzak) aktiftir. Saldırganlar <b>/wp-admin</b> veya <b>/gizli-veritabani</b> gibi sahte dizinlere girmeye çalıştığında otomatik olarak fişlenir ve size alarm gönderilir.</p>
+                    <div class="guide-box" style="border-color: #fbbf24;">
+                        <span style="color:#fbbf24; font-weight:bold;">Durum:</span> <span style="color:#10b981;">Aktif ve İzlemede</span>
+                    </div>
+                </div>
+
                 <button class="btn-connect" onclick="sistemAyarlariniKaydet()" style="margin-top: 20px; width: 100%; font-size: 16px; background: #10b981; color: #050b14;">TÜM SİSTEM AYARLARINI KAYDET & BAĞLA</button>
                 <div id="ayarRes" style="margin-top:15px; font-weight:bold; text-align:center;"></div>
 
@@ -228,6 +237,26 @@
                     <input type="text" id="portInp" class="integration-input" placeholder="Hedef IP veya Alan Adı (Örn: 192.168.1.1)">
                     <button class="btn-run" onclick="runPortScan()" style="margin-top:15px; background:#f43f5e; color:white;">AÇIK PORTLARI (ZAFİYET) TARA</button>
                     <div id="portRes" class="result-box"></div>
+                </div>
+
+                <button class="accordion active" style="border-left: 4px solid #a855f7;">💻 8. Kaynak Kod Zafiyet Tarayıcı (SAST)</button>
+                <div class="panel" style="display:block; border-left-color: #a855f7;">
+                    <p style="font-size: 13px; color:#94a3b8;">PHP, Python veya JS kodlarındaki güvenlik açıklarını (SQLi, XSS vb.) tarayın.</p>
+                    <textarea id="codeInp" rows="5" class="integration-input" placeholder="Kodu buraya yapıştırın..."></textarea>
+                    <button class="btn-run" onclick="runCodeAnalysis()" style="margin-top:15px; background:#a855f7; color:white;">KODDAKİ AÇIKLARI BUL</button>
+                    <div id="codeRes" class="result-box"></div>
+                </div>
+
+                <button class="accordion active" style="border-left: 4px solid #14b8a6;">🖼️ 9. Steganografi (Resme Veri Gizleme)</button>
+                <div class="panel" style="display:block; border-left-color: #14b8a6;">
+                    <p style="font-size: 13px; color:#94a3b8;">Sıradan bir resmin içine gizli mesaj gömün veya içindeki mesajı okuyun.</p>
+                    <input type="file" id="stegoFile" class="integration-input" style="background: #1e293b; cursor: pointer; padding: 15px;">
+                    <input type="text" id="stegoMsg" class="integration-input" placeholder="Resme gizlenecek mesaj (Okumak için boş bırakın)...">
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <button class="btn-run" onclick="runStegoGizle()" style="margin-top:0; background:#14b8a6; color:white;">RESME GÖM VE İNDİR</button>
+                        <button class="btn-run" onclick="runStegoOku()" style="margin-top:0; background:#0d9488; color:white;">RESİMDEN OKU</button>
+                    </div>
+                    <div id="stegoRes" class="result-box"></div>
                 </div>
 
             </div>
@@ -453,8 +482,6 @@
             btn.style.background = "#ea4335";
         }
 
-        // --- YENİ EKLENEN İSTİHBARAT VE SIZMA TESTİ FONKSİYONLARI ---
-
         // YENİ 1: IP İstihbaratı
         async function runIpRadar() {
             const hedef = document.getElementById('ipInp').value.trim();
@@ -496,10 +523,9 @@
             const resDiv = document.getElementById('passRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Şifreniz cihazınızda Hash'leniyor...";
 
             try {
-                // Şifreyi tarayıcıda (güvenli bir şekilde) Hash'e dönüştür
                 const hash = await sha1(password);
-                const prefix = hash.substring(0, 5); // Sadece ilk 5 karakteri al (k-Anonymity)
-                const suffix = hash.substring(5);    // Geri kalanını tut
+                const prefix = hash.substring(0, 5); 
+                const suffix = hash.substring(5);    
                 
                 resDiv.innerHTML = `<div class="step"><span style="color:#ec4899;">[+] SHA-1 Kriptolama:</span> ${hash} <br><span style="color:#cbd5e1; font-size:12px;">Sadece '${prefix}' API'ye gönderiliyor (Güvenli)...</span></div>`;
                 
@@ -507,7 +533,6 @@
                 const d = await r.json();
                 
                 if(d.status === "success") {
-                    // API'den gelen devasa listeyi satırlara böl
                     const lines = d.data.split(/\r?\n/);
                     let foundCount = 0;
                     for(let line of lines) {
@@ -551,6 +576,75 @@
                 }
             } catch (err) { resDiv.innerHTML = `<b style="color:#ef4444;">Bağlantı hatası.</b>`; }
             btn.innerHTML = "AÇIK PORTLARI (ZAFİYET) TARA"; btn.style.background = "#f43f5e";
+        }
+
+        // YENİ 4: SAST Kaynak Kod Analizi
+        async function runCodeAnalysis() {
+            const code = document.getElementById('codeInp').value;
+            if(!code) return alert('Lütfen analiz edilecek kodu girin.');
+            const btn = event.target; btn.innerHTML = "KOD TARANIYOR... ⏳"; btn.style.background = "#9333ea";
+            const resDiv = document.getElementById('codeRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Gelişmiş zafiyet taraması yapılıyor...";
+            
+            try {
+                const r = await fetch('/api/v1/analiz/kod/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({kod: code}) });
+                const d = await r.json();
+                if(d.status === "clean") {
+                    resDiv.style.borderLeftColor = "#10b981";
+                    resDiv.innerHTML = `<b style="color:#10b981;">✅ KOD TEMİZ: ${d.message}</b>`;
+                } else {
+                    resDiv.style.borderLeftColor = "#ef4444";
+                    let bulgular = d.bulgular.map(b => `<div class="step" style="border-bottom:none; margin-bottom:5px; padding-bottom:0;">${b}</div>`).join('');
+                    resDiv.innerHTML = `<b style="color:#ef4444; font-size:16px;">🚨 KRİTİK ZAFİYETLER BULUNDU:</b><br><br>${bulgular}`;
+                }
+            } catch(err) { resDiv.innerHTML = `<b style="color:#ef4444;">Bağlantı hatası.</b>`; }
+            btn.innerHTML = "KODDAKİ AÇIKLARI BUL"; btn.style.background = "#a855f7";
+        }
+
+        // YENİ 5: Steganografi (Veri Gizleme)
+        async function runStegoGizle() {
+            const fileInp = document.getElementById('stegoFile');
+            const msg = document.getElementById('stegoMsg').value;
+            if(!fileInp.files.length) return alert('Lütfen bir resim dosyası seçin.');
+            if(!msg) return alert('Lütfen gizlenecek mesajı yazın.');
+            
+            const btn = event.target; btn.innerHTML = "GİZLENİYOR... ⏳";
+            const resDiv = document.getElementById('stegoRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Piksellere veri işleniyor...";
+            
+            const formData = new FormData(); formData.append("file", fileInp.files[0]); formData.append("gizli_mesaj", msg);
+            try {
+                const r = await fetch('/api/v1/stego/gizle/', { method:'POST', body: formData });
+                if(r.ok) {
+                    const blob = await r.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = "gizli_" + fileInp.files[0].name; a.click();
+                    resDiv.style.borderLeftColor = "#10b981";
+                    resDiv.innerHTML = `<b style="color:#10b981;">✅ Mesaj resme başarıyla gömüldü ve dosya indirildi!</b>`;
+                } else { resDiv.innerHTML = `<b style="color:#ef4444;">İşlem başarısız.</b>`; }
+            } catch(err) { resDiv.innerHTML = `<b style="color:#ef4444;">Bağlantı hatası.</b>`; }
+            btn.innerHTML = "RESME GÖM VE İNDİR";
+        }
+
+        // YENİ 6: Steganografi (Veri Okuma)
+        async function runStegoOku() {
+            const fileInp = document.getElementById('stegoFile');
+            if(!fileInp.files.length) return alert('Lütfen okunacak resim dosyasını seçin.');
+            
+            const btn = event.target; btn.innerHTML = "OKUNUYOR... ⏳";
+            const resDiv = document.getElementById('stegoRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Pikseller deşifre ediliyor...";
+            
+            const formData = new FormData(); formData.append("file", fileInp.files[0]);
+            try {
+                const r = await fetch('/api/v1/stego/oku/', { method:'POST', body: formData });
+                const d = await r.json();
+                if(d.status === "success") {
+                    resDiv.style.borderLeftColor = "#14b8a6";
+                    resDiv.innerHTML = `<div class="step"><b style="color:#14b8a6; font-size:18px;">🕵️‍♂️ GİZLİ MESAJ BULUNDU:</b></div><span style="color:#e2e8f0; font-size:16px;">${d.mesaj}</span>`;
+                } else {
+                    resDiv.style.borderLeftColor = "#ef4444";
+                    resDiv.innerHTML = `<b style="color:#ef4444;">${d.message}</b>`;
+                }
+            } catch(err) { resDiv.innerHTML = `<b style="color:#ef4444;">Bağlantı hatası.</b>`; }
+            btn.innerHTML = "RESİMDEN OKU";
         }
     </script>
 </body>
