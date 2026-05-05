@@ -1,0 +1,9 @@
+{
+  "name": "Siber Kalkan",
+  "short_name": "SKalkan",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050b14",
+  "theme_color": "#10b981",
+  "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/2092/2092663.png", "sizes": "512x512", "type": "image/png" }]
+}

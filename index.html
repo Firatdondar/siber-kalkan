@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siber Kalkan | Akıllı Koruma</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0B0E14">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0B0E14;
+            --bg-gradient: linear-gradient(135deg, #0B0E14 0%, #151A28 100%);
+            --surface: rgba(255, 255, 255, 0.03);
+            --surface-hover: rgba(255, 255, 255, 0.06);
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #4F46E5;
+            --primary-glow: rgba(79, 70, 229, 0.4);
+            --secondary: #06B6D4;
+            --danger: #F43F5E;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --text: #F8FAFC;
+            --text-dim: #94A3B8;
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Inter', sans-serif;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { background: var(--bg-dark); height: 100%; }
+        body { 
+            background: var(--bg-gradient); 
+            color: var(--text); 
+            font-family: var(--font-body); 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Glassmorphism Sidebar */
+        .sidebar { 
+            width: 280px; 
+            background: rgba(11, 14, 20, 0.6); 
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            padding: 25px 20px; 
+            gap: 10px; 
+            z-index: 10;
+            box-shadow: 5px 0 30px rgba(0,0,0,0.3);
+        }
+        .logo { 
+            font-family: var(--font-heading);
+            font-size: 26px; 
+            font-weight: 800; 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-bottom: 40px; 
+            letter-spacing: -0.5px; 
+        }
+        .logo span { 
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            padding-left: 10px;
+        }
+        
+        .nav-item { 
+            padding: 14px 18px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            color: var(--text-dim); 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: flex; 
+            align-items: center; 
+            gap: 14px; 
+            font-weight: 500; 
+            font-size: 15px; 
+            border: 1px solid transparent;
+        }
+        .nav-item:hover { 
+            background: var(--surface-hover); 
+            color: var(--text); 
+            transform: translateX(5px);
+        }
+        .nav-item.active { 
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.15), rgba(6, 182, 212, 0.15)); 
+            color: white; 
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.1);
+        }
+        .nav-item.active .icon { color: var(--secondary); }
+        
+        /* Main Content */
+        .main-content { 
+            flex: 1; 
+            padding: 40px; 
+            overflow-y: auto; 
+            position: relative; 
+        }
+        .view-section { display: none; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-width: 1200px; margin: 0 auto; }
+        .view-section.active { display: block; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .header-title {
+            font-family: var(--font-heading);
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #fff, #94A3B8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header-desc { color: var(--text-dim); font-size: 16px; margin-bottom: 40px; font-weight: 400;}
+        
+        .card { 
+            background: var(--surface); 
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border); 
+            border-radius: 16px; 
+            padding: 25px; 
+            margin-bottom: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        /* Drawers (Accordions) */
+        .drawer-container { margin-bottom: 15px; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: rgba(0,0,0,0.2); transition: all 0.3s ease;}
+        .drawer-container:focus-within, .drawer-container.active { border-color: rgba(79, 70, 229, 0.5); box-shadow: 0 0 15px rgba(79, 70, 229, 0.1); }
+        
+        .accordion { 
+            width: 100%; 
+            background: transparent; 
+            color: var(--text); 
+            padding: 18px 20px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            text-align: left; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            font-size: 16px; 
+            border: none;
+            outline: none;
+            transition: 0.2s;
+        }
+        .accordion:hover { background: rgba(255,255,255,0.02); }
+        .accordion .title-group { display: flex; align-items: center; gap: 12px; }
+        .accordion .icon-circle { 
+            width: 36px; height: 36px; border-radius: 10px; 
+            background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .accordion .chevron { transition: transform 0.3s ease; color: var(--text-dim); }
+        .drawer-container.active .chevron { transform: rotate(180deg); color: var(--primary); }
+        
+        .panel { 
+            display: none; 
+            padding: 0 20px 20px 20px; 
+            background: transparent; 
+            font-size: 14px; 
+            color: var(--text-dim); 
+            line-height: 1.6;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Inputs & Buttons */
+        input, textarea, select { 
+            width: 100%; 
+            background: rgba(0,0,0,0.3); 
+            border: 1px solid var(--border); 
+            color: white; 
+            padding: 14px; 
+            border-radius: 10px; 
+            font-size: 14px; 
+            outline: none; 
+            transition: all 0.2s ease; 
+            margin-top: 12px; 
+            font-family: var(--font-body);
+        }
+        input:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+        
+        button { 
+            background: linear-gradient(135deg, var(--primary), #6366f1); 
+            color: white; 
+            border: none; 
+            padding: 14px 24px; 
+            border-radius: 10px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: all 0.2s ease; 
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 10px; 
+            margin-top: 15px;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            font-family: var(--font-body);
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--primary-glow); filter: brightness(1.1); }
+        button:active { transform: translateY(0); }
+        .btn-run { width: 100%; }
+        
+        .btn-danger { background: linear-gradient(135deg, var(--danger), #be123c); box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4); }
+        .btn-danger:hover { box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4); }
+        
+        .btn-success { background: linear-gradient(135deg, var(--success), #047857); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+        .btn-success:hover { box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4); }
+        
+        .btn-secondary { background: rgba(255,255,255,0.05); border: 1px solid var(--border); box-shadow: none; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.1); box-shadow: none; }
+        
+        .result-box { 
+            display: none; margin-top: 15px; padding: 18px; 
+            background: rgba(0,0,0,0.3); border-radius: 10px; 
+            border-left: 4px solid var(--primary); font-size: 14px; 
+            word-wrap: break-word; line-height: 1.5; color: #fff;
+        }
+        
+        /* Tables */
+        .table-container { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; background: rgba(0,0,0,0.2); }
+        th, td { padding: 16px 20px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: rgba(255,255,255,0.03); color: var(--text-dim); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        
+        /* Grid Layouts */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+        @media (max-width: 992px) { .grid-2 { grid-template-columns: 1fr; } }
+        
+        /* ALERT MODAL (Giant Warning) */
+        #virusModal {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px);
+            z-index: 9999; display: none; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #2a0808, #1a0505); border: 2px solid var(--danger); border-radius: 24px; padding: 50px; text-align: center; max-width: 650px; width: 90%; animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 100px rgba(239,68,68,0.4);
+        }
+        @keyframes pop { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .modal-icon { font-size: 90px; margin-bottom: 20px; animation: pulse 1s infinite alternate; display: inline-block;}
+        @keyframes pulse { from { transform: scale(1); text-shadow: 0 0 20px red; } to { transform: scale(1.1); text-shadow: 0 0 40px red; } }
+        .modal-content h1 { color: var(--danger); font-family: var(--font-heading); font-size: 42px; margin: 0 0 15px 0; font-weight: 900; letter-spacing: 1px;}
+        .modal-content p { color: #fca5a5; font-size: 18px; margin-bottom: 30px; line-height: 1.6; }
+        .target-box { background: rgba(0,0,0,0.5); border: 1px dashed var(--danger); padding: 20px; border-radius: 12px; color: white; font-family: monospace; word-break: break-all; margin-bottom: 35px; font-size: 16px;}
+        .btn-close-modal { background: var(--danger); font-size: 16px; padding: 16px 45px; border-radius: 12px; width: auto; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 20px rgba(239,68,68,0.5);}
+        
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow: auto; }
+            .sidebar { width: 100%; height: auto; padding: 15px; border-right: none; border-bottom: 1px solid var(--border); }
+            .logo { margin-bottom: 15px; justify-content: center; }
+            .nav-label { display: none; }
+            .main-content { padding: 20px; overflow-y: visible; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- YENİ SİDEBAR TASARIMI -->
+    <div class="sidebar">
+        <div class="logo">⚡ <span>Siber Kalkan</span></div>
+        
+        <div class="nav-label">Kullanıcı Modülleri</div>
+        <div class="nav-item active" onclick="switchTab('temel', this)">
+            <span class="icon">🛡️</span> Temel Koruma
+        </div>
+        <div class="nav-item" onclick="switchTab('gecmis', this)">
+            <span class="icon">🗄️</span> Tehdit Kayıtları
+        </div>
+
+        <div class="nav-label">Uzman Modülleri</div>
+        <div class="nav-item" onclick="switchTab('ileri', this)">
+            <span class="icon">🔬</span> İleri Düzey Laboratuvar
+        </div>
+        <div class="nav-item" onclick="switchTab('ayarlar', this)">
+            <span class="icon">⚙️</span> Sistem Ayarları
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        
+        <!-- 1. TEMEL KORUMA (Easy Features) -->
+        <div id="temel-view" class="view-section active">
+            <h1 class="header-title">Temel Koruma</h1>
+            <p class="header-desc">Telefonunuzu, dosyalarınızı ve linkleri kolayca güvence altına alın.</p>
+
+            <!-- SİHİRLİ TARAYICI (OMNI-SCANNER) YENİ ÖZELLİK -->
+            <div class="card" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(6, 182, 212, 0.1)); border: 1px solid var(--primary); text-align: center; padding: 40px 20px;">
+                <h2 style="font-family: var(--font-heading); font-size: 28px; margin-bottom: 10px;">✨ Sihirli Tarayıcı</h2>
+                <p style="color: var(--text-dim); margin-bottom: 25px; font-size: 15px;">Elinizdeki her şeyi (Link, Dosya, E-posta, IP Adresi) bu kutuya atın. Yapay zekamız ne olduğunu anlayıp otomatik analiz etsin!</p>
+                
+                <div style="max-width: 600px; margin: 0 auto; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 15px; display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border);">
+                    <input type="text" id="omniText" placeholder="Bir Link, Şifre, IP veya E-posta yapıştırın..." style="margin-top: 0; background: transparent; border: none; font-size: 16px; box-shadow: none;">
+                    
+                    <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                        <input type="file" id="omniFile" style="margin-top: 0; padding: 5px; width: auto; background: transparent; border: none;">
+                        <button onclick="runOmniScanner()" style="margin-top: 0; min-width: 150px; background: linear-gradient(135deg, #10B981, #059669); font-size: 16px; padding: 12px;">🚀 TARA</button>
+                    </div>
+                </div>
+                <div id="omniRes" class="result-box" style="max-width: 600px; margin: 20px auto 0 auto; text-align: left; background: var(--bg-dark);"></div>
+            </div>
+
+            <!-- Grafikler Üstte (Banner Şeklinde) -->
+            <div class="card" style="margin-bottom: 25px; padding: 20px;">
+                <h3 style="margin-bottom: 15px; font-weight: 600; font-size: 18px; text-align: center; color: var(--text);">Genel Güvenlik İstatistikleri</h3>
+                <div style="display: flex; justify-content: center; align-items: center; height: 220px;">
+                    <canvas id="myChartBildirim"></canvas>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <!-- MacroDroid Drawer -->
+                <div class="drawer-container active">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">📱</div> Telefon & Mesaj Koruması</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel" style="display: block;">
+                        <p>Telefonunuza gelen SMS, WhatsApp ve Instagram bildirimlerini arka planda yapay zekaya taratın.</p>
+                        <a href="/SiberKalkan.macro" download="SiberKalkan.macro" style="text-decoration: none;">
+                            <button class="btn-success btn-run">1. KORUMA DOSYASINI İNDİR (MacroDroid)</button>
+                        </a>
+                        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border);">
+                            <button id="btnTest" onclick="startConnectionTest()" class="btn-secondary btn-run">2. TELEFON BAĞLANTISINI TEST ET</button>
+                            <div id="testResultBox" style="display: none; margin-top: 15px; text-align: center; font-size: 13px;">
+                                <span id="testResultText">Bekleniyor...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dosya Tarama Drawer -->
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">📁</div> Şüpheli Dosya Tarama</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <p>İndirdiğiniz veya size gönderilen dosyaların içinde virüs olup olmadığını kontrol edin.</p>
+                        <input type="file" id="fileUpload" style="padding: 10px;">
+                        <button class="btn-run" onclick="runFileAnalysis()">DOSYAYI KONTROL ET</button>
+                        <div id="fileRes" class="result-box"></div>
+                    </div>
+                </div>
+
+                <!-- Link / Metin Tarama Drawer -->
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">🔗</div> Link & Mesaj Kontrolü</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <p>Emin olmadığınız bir linki veya mesajı yapay zekamıza analiz ettirin.</p>
+                        <textarea id="mobInp" rows="3" placeholder="Şüpheli linki veya mesajı buraya yapıştırın..."></textarea>
+                        <button class="btn-run" onclick="runMobile()">GÜVENLİĞİNİ SORGULA</button>
+                        <div id="mobRes" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. İLERİ DÜZEY LABORATUVAR (Advanced Features) -->
+        <div id="ileri-view" class="view-section">
+            <h1 class="header-title">İleri Düzey Laboratuvar</h1>
+            <p class="header-desc">Siber güvenlik uzmanlarına yönelik derinlemesine analiz ve OSINT araçları.</p>
+
+            <div class="card">
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">🕵️‍♂️</div> Veri Sızıntısı Radarı</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <input type="email" id="breachInp" placeholder="Taranacak E-posta adresi">
+                        <button class="btn-danger btn-run" onclick="runBreachCheck()">SIZIINTI VERİTABANINDA ARA</button>
+                        <div id="breachRes" class="result-box"></div>
+                    </div>
+                </div>
+
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">🌍</div> Hedef İstihbaratı (IP/Lokasyon)</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <input type="text" id="ipInp" placeholder="Hedef IP Adresi veya Domain">
+                        <button class="btn-run" onclick="runIpRadar()" style="background: linear-gradient(135deg, #8b5cf6, #c084fc);">LOKASYON VE ISP BİLGİSİ ÇEK</button>
+                        <div id="ipRes" class="result-box"></div>
+                    </div>
+                </div>
+
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">🎯</div> Ağ Zafiyet Tarayıcısı (Port Scan)</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <input type="text" id="portInp" placeholder="Hedef IP Adresi veya Domain">
+                        <button class="btn-danger btn-run" onclick="runPortScan()">AÇIK PORTLARI TARA</button>
+                        <div id="portRes" class="result-box"></div>
+                    </div>
+                </div>
+
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">🔑</div> Kriptografik Şifre Testi</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <p>Şifreniz hash'lenerek güvenli bir şekilde (k-Anonymity) sorgulanır.</p>
+                        <input type="password" id="passInp" placeholder="Test edilecek şifre">
+                        <button class="btn-run" onclick="runPasswordCheck()" style="background: linear-gradient(135deg, #ec4899, #f472b6);">ŞİFRE GÜVENLİĞİNİ TEST ET</button>
+                        <div id="passRes" class="result-box"></div>
+                    </div>
+                </div>
+
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">💻</div> Kaynak Kod Zafiyet Tarayıcı (SAST)</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <textarea id="codeInp" rows="5" placeholder="Analiz edilecek kodu buraya yapıştırın..."></textarea>
+                        <button class="btn-run" onclick="runCodeAnalysis()" style="background: linear-gradient(135deg, #14b8a6, #2dd4bf);">KODDAKİ AÇIKLARI BUL</button>
+                        <div id="codeRes" class="result-box"></div>
+                    </div>
+                </div>
+
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">🖼️</div> Steganografi (Resme Veri Gizleme)</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <input type="file" id="stegoFile" style="padding: 10px;">
+                        <input type="text" id="stegoMsg" placeholder="Resme gizlenecek gizli mesaj...">
+                        <div style="display:flex; gap:15px;">
+                            <button class="btn-run" onclick="runStegoGizle()" style="background: linear-gradient(135deg, #eab308, #facc15); color: black;">VERİYİ GÖM VE İNDİR</button>
+                            <button class="btn-secondary btn-run" onclick="runStegoOku()">GİZLİ VERİYİ OKU</button>
+                        </div>
+                        <div id="stegoRes" class="result-box"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. SİSTEM AYARLARI (Settings) -->
+        <div id="ayarlar-view" class="view-section">
+            <h1 class="header-title">Sistem Ayarları & Bağlantılar</h1>
+            <p class="header-desc">API anahtarlarını yapılandırın ve 3. parti entegrasyonları bağlayın.</p>
+
+            <div class="card">
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">🛡️</div> VirusTotal API Ayarı</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <p>Gelişmiş dosya taramaları için VirusTotal API anahtarınızı girin.</p>
+                        <input type="text" id="vtKeyInp" placeholder="VT API Key...">
+                        <button onclick="saveVTKey()">ANAHTARI KAYDET</button>
+                    </div>
+                </div>
+
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">💬</div> Discord Canlı Alarm Sistemi</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <p>Tehditler algılandığında Discord sunucunuza anlık mesaj gönderin.</p>
+                        <input type="text" id="discordInp" placeholder="Discord Webhook URL...">
+                        <button class="btn-secondary">BAĞLANTIYI KUR</button>
+                    </div>
+                </div>
+
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">✈️</div> Telegram Karantina Botu</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <p>Görsel analizleri ve OCR için Telegram Bot tokenınızı girin.</p>
+                        <input type="text" id="tgTokenInp" placeholder="BotFather HTTP API Token">
+                    </div>
+                </div>
+
+                <div class="drawer-container">
+                    <button class="accordion">
+                        <div class="title-group"><div class="icon-circle">📧</div> Gmail Gelen Kutusu Kalkanı</div>
+                        <div class="chevron">▼</div>
+                    </button>
+                    <div class="panel">
+                        <p>E-postalarınızdaki zararlı linkleri otomatik analiz edin.</p>
+                        <input type="text" id="gmAdresInp" placeholder="Gmail Adresiniz">
+                        <input type="password" id="gmSifreInp" placeholder="Uygulama Şifresi">
+                        <button class="btn-danger btn-run" onclick="gmailTara()">E-POSTALARI ŞİMDİ TARA</button>
+                        <div id="emailRes" class="result-box"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border);">
+                    <button class="btn-success btn-run" onclick="sistemAyarlariniKaydet()">TÜM SİSTEM AYARLARINI KAYDET</button>
+                    <div id="ayarRes" style="margin-top:15px; font-weight:bold; text-align:center; font-size: 14px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. GECMİŞ VIEW (Logs) -->
+        <div id="gecmis-view" class="view-section">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px;">
+                <div>
+                    <h1 class="header-title" style="margin-bottom: 5px;">Tehdit Kayıtları</h1>
+                    <p class="header-desc" style="margin-bottom: 0;">Sistemin engellediği ve analiz ettiği tüm kayıtlar.</p>
+                </div>
+                <button class="btn-secondary" onclick="loadGecmis()" style="margin-top: 0;">🔄 Tabloyu Yenile</button>
+            </div>
+            
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Kaynak</th>
+                                <th>Hedef (URL/Dosya)</th>
+                                <th>Detaylı Sonuç</th>
+                                <th>Güvenlik Durumu</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gecmisTableBody">
+                            <tr><td colspan="5" style="text-align: center; padding: 30px;">Kayıtlar yükleniyor...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- VIRUS ALERT MODAL (Aynı bıraktık ama renkleri css'de güncelledik) -->
+    <div id="virusModal">
+        <div class="modal-content">
+            <div class="modal-icon">☣️</div>
+            <h1>KRİTİK UYARI!</h1>
+            <p>Sistem cihazınıza gelen <b>zararlı</b> bir tehdit tespit etti ve engelledi.</p>
+            <div style="color: var(--text-dim); text-align: left; font-size: 14px; margin-bottom: 5px;">Tehdit Kaynağı: <span id="virusSource" style="color: white; font-weight: bold;">-</span></div>
+            <div class="target-box" id="virusTarget">http://malicious-link.com</div>
+            <button class="btn-close-modal" onclick="closeVirusAlert()">ANLADIM, TEHLİKEYİ KAPAT</button>
+        </div>
+    </div>
+
+    <script>
+        // UI INTERACTIONS
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
+            document.getElementById(tabId + '-view').classList.add('active');
+            el.classList.add('active');
+            if(tabId === 'temel') loadChart('myChartBildirim');
+            if(tabId === 'gecmis') loadGecmis();
+        }
+
+        document.querySelectorAll('.accordion').forEach(acc => {
+            acc.addEventListener('click', function() {
+                let container = this.parentElement;
+                container.classList.toggle('active');
+                let panel = this.nextElementSibling;
+                if (panel.style.display === 'block') {
+                    panel.style.display = 'none';
+                } else {
+                    panel.style.display = 'block';
+                }
+            });
+        });
+
+        // CHARTS
+        async function loadChart(canvasId) {
+            try {
+                const r = await fetch('/api/v1/sistem/istatistik/'); 
+                const d = await r.json();
+                if(window.myChartObj) window.myChartObj.destroy();
+                let ctx = document.getElementById(canvasId);
+                if(ctx) {
+                    Chart.defaults.color = '#94A3B8';
+                    Chart.defaults.font.family = "'Inter', sans-serif";
+                    window.myChartObj = new Chart(ctx, { 
+                        type:'doughnut', 
+                        data:{ labels:['Riskli','Güvenli','Şüpheli'], datasets:[{ data:[d.zararli, d.guvenli, d.supheli], backgroundColor:['#F43F5E','#10B981','#F59E0B'], borderWidth: 0, hoverOffset: 10 }] }, 
+                        options:{ cutout: '75%', maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true } } } }
+                    });
+                }
+            } catch(e) {}
+        }
+
+        // POLLING & DATA
+        let lastGecmisId = null;
+
+        async function loadGecmis() {
+            try {
+                const r = await fetch('/api/v1/sistem/gecmis/?t=' + new Date().getTime());
+                const d = await r.json();
+                const tbody = document.getElementById('gecmisTableBody');
+                if (d.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px; color: var(--text-dim);">Geçmiş kaydı bulunmamaktadır.</td></tr>';
+                    return;
+                }
+                if(lastGecmisId === null && d.data.length > 0) lastGecmisId = d.data[0].id;
+
+                let html = '';
+                d.data.forEach(item => {
+                    let color = item.durum === 'Zararli' ? 'var(--danger)' : (item.durum === 'Guvenli' ? 'var(--success)' : 'var(--warning)');
+                    let badge = `<span style="background: ${color}20; color: ${color}; padding: 6px 12px; border-radius: 20px; font-weight: 600; font-size: 12px; border: 1px solid ${color}40;">${item.durum}</span>`;
+                    
+                    html += `
+                        <tr>
+                            <td style="color: var(--text-dim);">${item.tarih}</td>
+                            <td style="color: white; font-weight: 500;">${item.tip}</td>
+                            <td style="word-break: break-all; color: var(--text-dim); font-family: monospace;">${item.hedef}</td>
+                            <td style="color: var(--text-dim);">${item.sonuc}</td>
+                            <td>${badge}</td>
+                        </tr>
+                    `;
+                });
+                if(tbody) tbody.innerHTML = html;
+            } catch (e) {}
+        }
+
+        async function checkNewThreats() {
+            try {
+                const r = await fetch('/api/v1/sistem/gecmis/?t=' + new Date().getTime());
+                const d = await r.json();
+                if (d.data && d.data.length > 0) {
+                    const latest = d.data[0];
+                    if (lastGecmisId !== null && latest.id > lastGecmisId) {
+                        if (latest.durum === 'Zararli') showVirusAlert(latest.hedef, latest.tip);
+                    }
+                    lastGecmisId = latest.id;
+                }
+            } catch (e) {}
+        }
+        setInterval(checkNewThreats, 3000);
+
+        function showVirusAlert(hedef, kaynak) {
+            const modal = document.getElementById('virusModal');
+            document.getElementById('virusTarget').innerText = hedef;
+            document.getElementById('virusSource').innerText = kaynak;
+            modal.style.display = 'flex';
+            
+            try {
+                let audio = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
+                audio.play().catch(e=>{});
+            } catch(e){}
+
+            if (Notification.permission === 'granted') {
+                new Notification("🚨 VİRÜS TESPİT EDİLDİ!", {
+                    body: kaynak + " üzerinden zararlı bir içerik geldi!\nHedef: " + hedef,
+                    icon: "https://cdn-icons-png.flaticon.com/512/10009/10009949.png"
+                });
+            }
+        }
+        function closeVirusAlert() { document.getElementById('virusModal').style.display = 'none'; }
+
+        var testInterval;
+        function startConnectionTest() {
+            let box = document.getElementById('testResultBox');
+            let txt = document.getElementById('testResultText');
+            let btn = document.getElementById('btnTest');
+            box.style.display = 'block';
+            txt.innerHTML = 'Telefonunuzdan sinyal bekleniyor...';
+            txt.style.color = 'var(--text)';
+            btn.innerHTML = '⏳ BEKLENİYOR...';
+            
+            if(testInterval) clearInterval(testInterval);
+            testInterval = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/v1/sistem/baglanti-test/?t=' + new Date().getTime());
+                    const data = await res.json();
+                    if(data.status === 'connected') {
+                        clearInterval(testInterval);
+                        txt.innerHTML = '✅ ' + data.message;
+                        txt.style.color = 'var(--success)';
+                        btn.innerHTML = '✅ ONAYLANDI';
+                        btn.style.background = 'var(--success)';
+                        btn.style.color = 'white';
+                        btn.style.border = 'none';
+                    }
+                } catch(e) {}
+            }, 2000);
+            setTimeout(() => {
+                if(btn.innerText.includes('BEKLENİYOR')) {
+                    clearInterval(testInterval);
+                    txt.innerHTML = '❌ Zaman aşımı. Sinyal alınamadı.';
+                    txt.style.color = 'var(--danger)';
+                    btn.innerHTML = 'TEKRAR TEST ET';
+                }
+            }, 60000);
+        }
+
+        window.addEventListener('load', () => {
+            if (Notification.permission !== 'granted' && Notification.permission !== 'denied') Notification.requestPermission();
+            if(localStorage.getItem('vt_key')) {
+                let vtInp = document.getElementById('vtKeyInp');
+                if(vtInp) vtInp.value = localStorage.getItem('vt_key');
+            }
+            loadChart('myChartBildirim');
+        });
+
+        // ACTION FUNCTIONS (Backend Calls)
+        function saveVTKey() {
+            const key = document.getElementById('vtKeyInp').value.trim();
+            if(key.length > 30) { localStorage.setItem('vt_key', key); alert('Başarıyla Kaydedildi!'); } 
+            else alert('Geçersiz API Anahtarı.');
+        }
+
+        async function sistemAyarlariniKaydet() {
+            const tg = document.getElementById('tgTokenInp') ? document.getElementById('tgTokenInp').value.trim() : "";
+            const gm_adres = document.getElementById('gmAdresInp') ? document.getElementById('gmAdresInp').value.trim() : "";
+            const gm_sifre = document.getElementById('gmSifreInp') ? document.getElementById('gmSifreInp').value.trim() : "";
+            const discord_hook = document.getElementById('discordInp') ? document.getElementById('discordInp').value.trim() : "";
+            const renderUrl = window.location.origin;
+            const resDiv = document.getElementById('ayarRes');
+            
+            try {
+                const r = await fetch('/api/v1/ayarlar/kaydet/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ telegram_token: tg, render_url: renderUrl, gmail_adres: gm_adres, gmail_sifre: gm_sifre, discord_webhook: discord_hook }) });
+                const d = await r.json();
+                resDiv.style.color = d.status === "success" ? "var(--success)" : "var(--danger)";
+                resDiv.innerHTML = d.status === "success" ? "✅ Ayarlar Başarıyla Kaydedildi" : "❌ Hata: " + d.message;
+            } catch (err) { resDiv.innerHTML = "Bağlantı hatası."; resDiv.style.color="var(--danger)"; }
+        }
+
+        // SIHIRLI TARAYICI (OMNI-SCANNER) LOGIC
+        async function runOmniScanner() {
+            const textInp = document.getElementById('omniText').value.trim();
+            const fileInp = document.getElementById('omniFile').files[0];
+            const resDiv = document.getElementById('omniRes');
+            resDiv.style.display = "block";
+            resDiv.innerHTML = "⏳ Yapay zeka veriyi analiz ediyor...";
+            resDiv.style.borderLeftColor = "var(--primary)";
+
+            if (fileInp) {
+                // Dosya algılandı
+                document.getElementById('fileUpload').files = document.getElementById('omniFile').files;
+                resDiv.innerHTML = "📦 Dosya tespit edildi. Laboratuvara gönderiliyor...";
+                setTimeout(() => { document.getElementById('fileRes').id = "fileResTemp"; resDiv.id = "fileRes"; runFileAnalysis(); setTimeout(()=>{ resDiv.id="omniRes"; document.getElementById('fileResTemp').id="fileRes"; }, 5000); }, 500);
+            } else if (textInp) {
+                if (textInp.includes("@") && textInp.includes(".")) {
+                    // E-posta Sızıntısı Algılandı
+                    document.getElementById('breachInp').value = textInp;
+                    resDiv.innerHTML = "📧 E-Posta adresi tespit edildi. Sızıntı veri tabanı aranıyor...";
+                    setTimeout(() => { document.getElementById('breachRes').id = "breachResTemp"; resDiv.id = "breachRes"; runBreachCheck(); setTimeout(()=>{ resDiv.id="omniRes"; document.getElementById('breachResTemp').id="breachRes"; }, 5000); }, 500);
+                } else if (/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(textInp)) {
+                    // IP Algılandı
+                    document.getElementById('ipInp').value = textInp;
+                    resDiv.innerHTML = "🌍 IP Adresi tespit edildi. Lokasyon ve ISS bilgisi çekiliyor...";
+                    setTimeout(() => { document.getElementById('ipRes').id = "ipResTemp"; resDiv.id = "ipRes"; runIpRadar(); setTimeout(()=>{ resDiv.id="omniRes"; document.getElementById('ipResTemp').id="ipRes"; }, 5000); }, 500);
+                } else {
+                    // Normal Metin veya Link algılandı
+                    document.getElementById('mobInp').value = textInp;
+                    resDiv.innerHTML = "🔗 Metin/Link tespit edildi. Oltalama zekasına gönderiliyor...";
+                    setTimeout(() => { document.getElementById('mobRes').id = "mobResTemp"; resDiv.id = "mobRes"; runMobile(); setTimeout(()=>{ resDiv.id="omniRes"; document.getElementById('mobResTemp').id="mobRes"; }, 5000); }, 500);
+                }
+            } else {
+                resDiv.innerHTML = "Lütfen bir link yapıştırın veya dosya seçin!";
+                resDiv.style.borderLeftColor = "var(--warning)";
+            }
+        }
+
+        // Diğer analiz fonksiyonları aynen çalışacak şekilde tasarlandı
+        async function runMobile() {
+            const btn = event.target; const orig = btn.innerHTML; btn.innerHTML = "ANALİZ EDİLİYOR...";
+            let resDiv = document.getElementById('mobRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Yapay zeka değerlendiriyor...";
+            try {
+                const r = await fetch('/api/v1/analiz/mobil/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message: document.getElementById('mobInp').value}) });
+                const d = await r.json();
+                if(d.status === "clean") { resDiv.style.borderLeftColor = "var(--success)"; resDiv.innerHTML = `<b style="color:var(--success); font-size:16px;">${d.message}</b>`; } 
+                else {
+                    let color = d.karar === "Zararli" ? "var(--danger)" : "var(--warning)";
+                    resDiv.style.borderLeftColor = color;
+                    resDiv.innerHTML = `<b style="color:${color}; font-size:16px;">Karar: ${d.karar.toUpperCase()} (%${d.risk} Risk)</b><br><br><span style="color:var(--text-dim)">Son Tespit Edilen URL:</span><br>${d.son_url}`;
+                }
+            } catch(e) { resDiv.innerHTML = "Bağlantı hatası."; }
+            btn.innerHTML = orig; checkNewThreats();
+        }
+
+        async function runBreachCheck() {
+            const email = document.getElementById('breachInp').value.trim(); if(!email) return;
+            const resDiv = document.getElementById('breachRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Karanlık web ve sızıntı veritabanları taranıyor...";
+            try {
+                const r = await fetch('/api/v1/osint/breach/' + email); const d = await r.json();
+                if(d.status === "found") { resDiv.style.borderLeftColor = "var(--danger)"; resDiv.innerHTML = `<b style="color:var(--danger); font-size:16px;">⚠️ DİKKAT! Veri Sızıntısı Bulundu!</b><br>Bu e-posta adresi geçmişte hacklenmiş veritabanlarında yer alıyor.`; }
+                else if(d.status === "safe") { resDiv.style.borderLeftColor = "var(--success)"; resDiv.innerHTML = `<b style="color:var(--success); font-size:16px;">✅ Güvenli.</b><br>Bilinen bir sızıntı bulunamadı.`; }
+            } catch(e) { resDiv.innerHTML = "Hata."; }
+        }
+
+        async function runIpRadar() {
+            const h = document.getElementById('ipInp').value.trim(); if(!h) return;
+            const resDiv = document.getElementById('ipRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Lokasyon ve ISS bilgisi çekiliyor...";
+            try {
+                const r = await fetch('/api/v1/osint/ip/' + encodeURIComponent(h)); const d = await r.json();
+                if(d.status === "success" && d.data.status==="success") {
+                    resDiv.style.borderLeftColor = "var(--primary)";
+                    resDiv.innerHTML = `<b style="color:var(--primary);">Hedef İstihbarat Sonucu:</b><br><br><b>Ülke:</b> ${d.data.country}<br><b>Şehir:</b> ${d.data.city || 'Bilinmiyor'}<br><b>Servis Sağlayıcı (ISP):</b> ${d.data.isp}`;
+                } else resDiv.innerHTML = "Veri bulunamadı.";
+            } catch(e) { resDiv.innerHTML = "Hata."; }
+        }
+
+        async function sha1(str) { const buffer = new TextEncoder().encode(str); const digest = await crypto.subtle.digest("SHA-1", buffer); return Array.from(new Uint8Array(digest)).map( x => x.toString(16).padStart(2,'0') ).join('').toUpperCase(); }
+        
+        async function runPasswordCheck() {
+            const p = document.getElementById('passInp').value; if(!p) return;
+            const resDiv = document.getElementById('passRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Şifre hashlenip güvenli olarak sorgulanıyor...";
+            try {
+                const hash = await sha1(p); const prefix = hash.substring(0,5); const suffix = hash.substring(5);
+                const r = await fetch('/api/v1/osint/password/' + prefix); const d = await r.json();
+                if(d.status === "success") {
+                    const lines = d.data.split(/\r?\n/); let c = 0;
+                    for(let l of lines) { let pts = l.split(':'); if(pts[0]===suffix) { c=parseInt(pts[1]); break; } }
+                    resDiv.style.borderLeftColor = c>0 ? "var(--danger)" : "var(--success)";
+                    resDiv.innerHTML = c>0 ? `<b style="color:var(--danger); font-size:16px;">🚨 TEHLİKE!</b><br>Bu şifre daha önce <b>${c} kez</b> internete sızdırılmış. Asla kullanmayın!` : `<b style="color:var(--success); font-size:16px;">✅ Temiz!</b><br>Bu şifre bilinen sızıntılarda yok.`;
+                }
+            } catch(e) { resDiv.innerHTML = "Hata."; }
+        }
+
+        async function runPortScan() {
+            const h = document.getElementById('portInp').value.trim(); if(!h) return;
+            const resDiv = document.getElementById('portRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Açık portlar taranıyor (Bu işlem biraz sürebilir)...";
+            try {
+                const r = await fetch('/api/v1/osint/port/' + encodeURIComponent(h)); const d = await r.json();
+                if(d.status === "success") {
+                    resDiv.style.borderLeftColor = d.portlar.length>0 ? "var(--danger)" : "var(--success)";
+                    resDiv.innerHTML = d.portlar.length>0 ? `<b style="color:var(--danger);">⚠️ ${d.portlar.length} Açık Port Bulundu:</b><br><br>${d.portlar.join('<br>')}` : `<b style="color:var(--success);">✅ Portlar Kapalı.</b><br>Sistem dışarıdan güvenli görünüyor.`;
+                }
+            } catch(e) { resDiv.innerHTML = "Hata."; }
+        }
+
+        async function runCodeAnalysis() {
+            const code = document.getElementById('codeInp').value; if(!code) return;
+            const resDiv = document.getElementById('codeRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Statik kod analizi yapılıyor...";
+            try {
+                const r = await fetch('/api/v1/analiz/kod/', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({kod:code})});
+                const d = await r.json();
+                if(d.status === "clean") { resDiv.style.borderLeftColor = "var(--success)"; resDiv.innerHTML = `<b style="color:var(--success); font-size:16px;">✅ Kod Güvenli</b><br>Bilinen bir zafiyet tespit edilemedi.`; }
+                else { resDiv.style.borderLeftColor = "var(--danger)"; resDiv.innerHTML = `<b style="color:var(--danger); font-size:16px;">⚠️ Zafiyetler Tespit Edildi:</b><br><br>` + d.bulgular.join('<br><br>'); }
+            } catch(e) { resDiv.innerHTML = "Hata."; }
+        }
+
+        async function runFileAnalysis() {
+            const fileInp = document.getElementById('fileUpload'); if(!fileInp.files.length) return;
+            const resDiv = document.getElementById('fileRes'); resDiv.style.display = "block"; resDiv.innerHTML = "Dosya analiz motoruna yükleniyor ve taranıyor...";
+            const formData = new FormData(); formData.append("file", fileInp.files[0]);
+            const headers = {}; const vtKey = localStorage.getItem('vt_key'); if(vtKey) headers['x-vt-key'] = vtKey;
+            try {
+                const r = await fetch('/api/v1/analiz/dosya/', { method: 'POST', headers: headers, body: formData });
+                const d = await r.json();
+                let color = d.sonuc === "Zararli" ? "var(--danger)" : (d.sonuc === "Guvenli" ? "var(--success)" : "var(--warning)");
+                resDiv.style.borderLeftColor = color;
+                resDiv.innerHTML = `<b style="color:${color}; font-size:16px;">Karar: ${d.sonuc.toUpperCase()}</b><br><br><span style="color:var(--text-dim);">Detaylı Rapor:</span><br>${d.detay}`;
+                checkNewThreats();
+            } catch(e) { resDiv.innerHTML = "Hata. Dosya boyutu büyük olabilir veya API yanıt vermiyor."; }
+        }
+
+        async function gmailTara() {
+            const resDiv = document.getElementById('emailRes'); resDiv.style.display = "block"; resDiv.innerHTML = "E-posta sunucusuna bağlanılıyor...";
+            try {
+                const r = await fetch('/api/v1/analiz/email/', { method: 'POST' }); const d = await r.json();
+                resDiv.style.borderLeftColor = d.status === "success" ? "var(--success)" : "var(--danger)";
+                resDiv.innerHTML = `<b style="color:${d.status === "success" ? "var(--success)" : "var(--danger)"}">${d.message}</b>`;
+                checkNewThreats();
+            } catch(e) { resDiv.innerHTML = "Hata."; }
+        }
+
+        async function runStegoGizle() {
+            const fileInp = document.getElementById('stegoFile'); const msg = document.getElementById('stegoMsg').value;
+            if(!fileInp.files.length || !msg) return;
+            const resDiv = document.getElementById('stegoRes'); resDiv.style.display="block"; resDiv.innerHTML="Piksellere veri kodlanıyor...";
+            const formData = new FormData(); formData.append("file", fileInp.files[0]); formData.append("gizli_mesaj", msg);
+            try {
+                const r = await fetch('/api/v1/stego/gizle/', { method:'POST', body: formData });
+                if(r.ok) {
+                    const blob = await r.blob(); const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = "gizli_" + fileInp.files[0].name; a.click();
+                    resDiv.style.borderLeftColor = "var(--success)";
+                    resDiv.innerHTML = `<b style="color:var(--success);">✅ Mesaj başarıyla fotoğrafa gizlendi ve indirildi!</b>`;
+                } else resDiv.innerHTML = "Hata.";
+            } catch(e) { resDiv.innerHTML = "Hata."; }
+        }
+
+        async function runStegoOku() {
+            const fileInp = document.getElementById('stegoFile'); if(!fileInp.files.length) return;
+            const resDiv = document.getElementById('stegoRes'); resDiv.style.display="block"; resDiv.innerHTML="Fotoğraf analiz ediliyor...";
+            const formData = new FormData(); formData.append("file", fileInp.files[0]);
+            try {
+                const r = await fetch('/api/v1/stego/oku/', { method:'POST', body: formData }); const d = await r.json();
+                if(d.status === "success") { 
+                    resDiv.style.borderLeftColor = "var(--secondary)";
+                    resDiv.innerHTML = `<b style="color:var(--secondary);">Bulunan Gizli Mesaj:</b><br><br>${d.mesaj}`; 
+                }
+                else {
+                    resDiv.style.borderLeftColor = "var(--warning)";
+                    resDiv.innerHTML = "Bu fotoğrafın içinde gizlenmiş bir mesaj bulunamadı.";
+                }
+            } catch(e) { resDiv.innerHTML = "Hata."; }
+        }
+    </script>
+</body>
+</html>
