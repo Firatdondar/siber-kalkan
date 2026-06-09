@@ -1,5 +1,3 @@
-:
-
 Markdown
 # 🛡️ Siber Kalkan
 ### *Çift Çekirdekli Proaktif Mobil Tehdit Analizi ve İstihbarat Platformu*
@@ -8,23 +6,23 @@ Markdown
 [![scikit-learn](https://img.shields.io/badge/AI%20Engine-scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![Docker](https://img.shields.io/badge/Deployment-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-Siber Kalkan; uç Android cihaz telemetrisi (**Edge Telemetry**) ile asenkron backend mimarisini bütünleştiren, geleneksel imza tabanlı güvenlik sistemlerinin yetersiz kaldığı sıfırıncı gün (**Zero-Day**) ve gelişmiş oltalama (**Phishing**) tehditlerini engelleyen endüstriyel standartlarda bir proaktif siber güvenlik platformudur.
+[cite_start]Siber Kalkan; uç Android cihaz telemetrisi (**Edge Telemetry**) ile asenkron backend mimarisini bütünleştiren, geleneksel imza tabanlı güvenlik sistemlerinin yetersiz kaldığı sıfırıncı gün (**Zero-Day**) ve gelişmiş oltalama (**Phishing**) tehditlerini engelleyen endüstriyel standartlarda bir proaktif siber güvenlik platformudur[cite: 65, 96, 216].
 
-> 🔒 **Gizlilik Politikası (GDPR / KVKK):** Mobil cihazlara düşen anlık bildirim verileri (WhatsApp, SMS, Telegram), kullanıcı veri gizliliği standartlarına tam uyumlu şekilde işlenerek gerçek zamanlı yapay zeka hatlarından geçirilir ve SOC kanallarına aktarılır.
+> [cite_start]🔒 **Gizlilik Politikası (GDPR / KVKK):** Mobil cihazlara düşen anlık bildirim verileri (WhatsApp, SMS, Telegram), kullanıcı veri gizliliği standartlarına tam uyumlu şekilde işlenerek gerçek zamanlı yapay zeka hatlarından geçirilir ve SOC kanallarına aktarılır[cite: 114, 115, 158].
 
 ---
 
 ## 🏗️ 1. Sistem Mimarisi ve Teknoloji Yığını
 
-Platform, yüksek yük altında minimum gecikme (**low-latency**) ve maksimum hata toleransı ile çalışacak şekilde gevşek bağlı (**loosely coupled**) tasarım kalıpları üzerine inşa edilmiştir:
+[cite_start]Platform, yüksek yük altında minimum gecikme (**low-latency**) ve maksimum hata toleransı ile çalışacak şekilde gevşek bağlı (**loosely coupled**) tasarım kalıpları üzerine inşa edilmiştir[cite: 94, 95]:
 
 | Katman | Teknoloji / Çerçeve | Mimari Rol ve İşleyiş |
 | :--- | :--- | :--- |
-| **Backend Çekirdeği** | `FastAPI (Python)` | ASGI uyumlu omurga. `Pydantic v2` ile veri doğrulaması, `SlowAPI` ile hız sınırlama süreçlerini asenkron yönetir. |
-| **Yapay Zeka Motoru** | `Scikit-learn` | 50.000+ canlı URL ile eğitilmiş `Random Forest Classifier`. 78 farklı yapısal özniteliği milisaniyeler içinde çıkarır. |
-| **Uç Aygıt Katmanı** | `Android OS` | Erişilebilirlik ve Bildirim Dinleme servisleri üzerinden veri akışını yakalayan otomasyon kancası. |
+| **Backend Çekirdeği** | `FastAPI (Python)` | [cite_start]ASGI uyumlu omurga[cite: 117]. [cite_start]`Pydantic v2` ile veri doğrulaması, `SlowAPI` ile hız sınırlama süreçlerini asenkron yönetir[cite: 102, 117]. |
+| **Yapay Zeka Motoru** | `Scikit-learn` | [cite_start]50.000+ canlı URL ile eğitilmiş `Random Forest Classifier`[cite: 117, 121]. 78 farklı yapısal özniteliği milisaniyeler içinde çıkarır. |
+| **Uç Aygıt Katmanı** | `Android OS` | [cite_start]Erişilebilirlik ve Bildirim Dinleme servisleri üzerinden veri akışını yakalayan otomasyon kancası[cite: 117]. |
 | **Veri & Loglama** | `İlişkisel SQL` | ACID prensiplerine tam uyumlu, optimize edilmiş ve indekslenmiş kalıcı veri mimarisi. |
-| **Yönetim Paneli** | `Vanilla JS / WebSockets` | Canlı tehdit akış analitiği ve adli bilişim metriklerinin izlenebildiği reaktif Dashboard. |
+| **Yönetim Paneli** | `Vanilla JS / WebSockets` | [cite_start]Canlı tehdit akış analitiği ve adli bilişim metriklerinin izlenebildiği reaktif Dashboard[cite: 105, 111]. |
 
 ---
 
@@ -45,21 +43,21 @@ VirusTotal v3 Küresel API                       Honeypot & Aktif Savunma
 
 
 ### ⚡ A. Yapay Zeka Tabanlı Phishing Algılama Hattı
-* **Öznitelik Mühendisliği:** URL'ler üzerinde *Shannon Entropi Skoru*, *WHOIS Alan Adı Yaş Analizi* ve *Semantik NLP* hesaplamaları yürütülür.
-* **İki Aşamalı Doğrulama (Two-Tier Pipeline):** Modelin sınırda kaldığı şüpheli vakalarda (Gri Alan: %50-%70 risk), sistem arka planda asenkron olarak **VirusTotal v3 API** sorgusunu tetikler ve sezgisel güç ile imza veri tabanını birleştirir.
+* **Öznitelik Mühendisliği:** URL'ler üzerinde *Shannon Entropi Skoru*, *WHOIS Alan Adı Yaş Analizi* ve *Semantik NLP* hesaplamaları yürütülür[cite: 122].
+* **İki Aşamalı Doğrulama (Two-Tier Pipeline):** Modelin sınırda kaldığı şüpheli vakalarda (Gri Alan: %50-%70 risk), sistem arka planda asenkron olarak **VirusTotal v3 API** sorgusunu tetikler ve sezgisel güç ile imza veri tabanını birleştirir[cite: 134, 136].
 
 ### 🔍 B. Gelişmiş Dosya Analizi ve Steganografi
-* Sisteme yüklenen dosyaların SHA-256 hash değerlerini çıkararak küresel tehdit istihbarat ağlarında taratır.
-* Görüntü dosyalarının (PNG/JPEG) içerisine **LSB (Least Significant Bit)** yöntemiyle gizlenmiş olası komuta kontrol (C2) sızıntılarını adli bilişim teknikleriyle ayrıştırır.
+* Sisteme yüklenen dosyaların SHA-256 hash değerlerini çıkararak küresel tehdit istihbarat ağlarında taratır[cite: 136].
+* Görüntü dosyalarının (PNG/JPEG) içerisine **LSB (Least Significant Bit)** yöntemiyle gizlenmiş olası komuta kontrol (C2) sızıntılarını adli bilişim teknikleriyle ayrıştırır[cite: 140].
 
 ### 🛡️ C. Statik Kod Analizi (SAST)
-* Kaynak kodları regex tabanlı kural setleriyle tarayarak hardcoded unutulmuş API anahtarlarını, şifreleri, SQL Injection ve XSS zafiyetlerini geliştirme aşamasında yakalar.
+* Kaynak kodları regex tabanlı kural setleriyle tarayarak hardcoded unutulmuş API anahtarlarını, şifrelerı, SQL Injection ve XSS zafiyetlerini geliştirme aşamasında yakalar[cite: 144, 146].
 
 ### 🪤 D. Aktif Savunma: Honeypot (Siber Tuzak)
-* Saldırganları ana sistemden uzak tutmak için sahte dizinler (`/wp-admin`, `/api/v1/admin`) açar. Yetkisiz erişim sağlayan IP'lerin coğrafi konum verilerini (Geolocation) çıkararak otomatik kara listeye alır.
+* Saldırganları ana sistemden uzak tutmak için sahte dizinler (`/wp-admin`, `/api/v1/admin`) açar[cite: 177, 178]. Yetkisiz erişim sağlayan IP'lerin coğrafi konum verilerini (Geolocation) çıkararak otomatik kara listeye alır[cite: 179].
 
 ### 📊 E. Otomatik Adli Raporlama
-* Olay silsilesini ve analiz çıktılarını yasal süreçlere uygun, ISO/IEC 27001 uyumlu resmi bir adli bilişim raporu (`.docx`) olarak otomatik üretir ve **Discord/Telegram API** üzerinden SOC ekiplerine anlık iletir.
+* Olay silsilesini ve analiz çıktılarını yasal süreçlere uygun, ISO/IEC 27001 uyumlu resmi bir adli bilişim raporu (`.docx`) olarak otomatik üretir ve **Discord/Telegram API** üzerinden SOC ekiplerine anlık iletir[cite: 163, 164].
 
 ---
 
@@ -128,12 +126,12 @@ XPOSEDORNOT_API_KEY=your_xposedornot_data_breach_token_here
 
 # --- SOC KANAL AYARLARI ---
 TELEGRAM_BOT_TOKEN=8638671453:AAF_br_0utQzdK315ht7ZmZIg_0wosX0zVc
-DISCORD_WEBHOOK_URL=[https://discord.com/api/webhooks/your_id/your_token](https://discord.com/api/webhooks/your_id/your_token)
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your_id/your_token
 🚀 5. Hızlı Başlangıç
 Manuel Kurulum
 Bash
 # 1. Depoyu klonlayın
-git clone [https://github.com/kullanici_adi/siber-kalkan.git](https://github.com/kullanici_adi/siber-kalkan.git)
+git clone https://github.com/kullanici_adi/siber-kalkan.git
 cd siber-kalkan
 
 # 2. Bağımlılıkları kurun
@@ -141,5 +139,5 @@ pip install -r requirements.txt
 
 # 3. API Gateway'i tetikleyin
 python main.py
-📱 Mobil Entegrasyon (Edge Config)
+📱 6. Mobil Entegrasyon (Edge Config)
 SiberKalkan.macro betiği uç cihaza import edildikten sonra gerekli servis izinleri tanımlanır. Mobil otomasyon, yakaladığı sinyalleri TLS 1.3 şifreleme katmanı üzerinden doğrudan merkezi sunucunun https://siber-kalkan.onrender.com/api/v1/analiz/mobil/ uç noktasına güvenli bir şekilde ulaştırır.
