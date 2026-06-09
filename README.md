@@ -142,21 +142,8 @@ DISCORD_WEBHOOK_URL=[https://discord.com/api/webhooks/your_id/your_token](https:
 
 ---
 
-## 🚀 5. Hızlı Başlangıç
-
-### Manuel Kurulum
-<pre><code>
-# 1. Depoyu klonlayın
-git clone [https://github.com/kullanici_adi/siber-kalkan.git](https://github.com/kullanici_adi/siber-kalkan.git)
-cd siber-kalkan
-
-# 2. Bağımlılıkları kurun
-pip install -r requirements.txt
-
-# 3. API Gateway'i tetikleyin
-python main.py
-</code></pre>
-
-### 📱 6. Mobil Entegrasyon (Edge Config)
-
-SiberKalkan.macro betiği uç cihaza import edildikten sonra gerekli servis izinleri tan
+🚀 5. Hızlı BaşlangıçManuel KurulumDepoyu yerel ortamınıza klonlayın:Bashgit clone https://github.com/Firatdondar/siber-kalkan.git
+Proje dizinine giriş yapın:Bashcd siber-kalkan
+Bağımlılık listesini yükleyin:Bashpip install -r requirements.txt
+Sunucu ağ geçidini tetikleyin:Bashpython main.py
+📱 6. Mobil Entegrasyon (Edge Config)SiberKalkan.macro betiği uç Android cihaza import edildikten sonra gerekli servis izinleri (Erişilebilirlik ve Bildirim Dinleme servisleri) tanımlanır. Mobil otomasyon katmanı, arka planda yakaladığı tüm telemetri sinyallerini TLS 1.3 şifreleme katmanı üzerinden doğrudan merkezi sunucunun https://siber-kalkan.onrender.com/api/v1/analiz/mobil/ uç noktasına güvenli ve asenkron bir şekilde ulaştırır. Giriş sinyalleri yapay zeka motoru tarafından işlenerek anlık tehdit skoru üretilmeye hazırdır.  📝 Notlar ve Katkıda BulunmaBu proje Harran Üniversitesi Bilgisayar Mühendisliği Bölümü bitirme ödevi kapsamında geliştirilmiştir.  Herhangi bir entegrasyon hatası durumunda lütfen log kayıtlarını ve .env dosyasındaki API anahtarlarının geçerliliğini kontrol edin.
