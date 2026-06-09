@@ -28,7 +28,7 @@ Platform, yüksek yük altında minimum gecikme (**low-latency**) ve maksimum ha
 
 ## 🧩 2. Platform Modülleri ve Kabiliyetler
 
-```text
+<pre><code>
                                   [ GELEN VERİ AKIŞI ]
                                            │
                     ┌──────────────────────┴──────────────────────┐
@@ -41,28 +41,31 @@ Platform, yüksek yük altında minimum gecikme (**low-latency**) ve maksimum ha
                     │                                             │
                     v                                             v
        VirusTotal v3 Küresel API                       Honeypot & Aktif Savunma
-⚡ A. Yapay Zeka Tabanlı Phishing Algılama Hattı
-Öznitelik Mühendisliği: URL'ler üzerinde Shannon Entropi Skoru, WHOIS Alan Adı Yaş Analizi ve Semantik NLP hesaplamaları yürütülür.
+</code></pre>
 
-İki Aşamalı Doğrulama (Two-Tier Pipeline): Modelin sınırda kaldığı şüpheli vakalarda (Gri Alan: %50-%70 risk), sistem arka planda asenkron olarak VirusTotal v3 API sorgusunu tetikler ve sezgisel güç ile imza veri tabanını birleştirir.
+### ⚡ A. Yapay Zeka Tabanlı Phishing Algılama Hattı
+* **Öznitelik Mühendisliği:** URL'ler üzerinde *Shannon Entropi Skoru*, *WHOIS Alan Adı Yaş Analizi* ve *Semantik NLP* hesaplamaları yürütülür.
+* **İki Aşamalı Doğrulama (Two-Tier Pipeline):** Modelin sınırda kaldığı şüpheli vakalarda (Gri Alan: %50-%70 risk), sistem arka planda asenkron olarak **VirusTotal v3 API** sorgusunu tetikler ve sezgisel güç ile imza veri tabanını birleştirir.
 
-🔍 B. Gelişmiş Dosya Analizi ve Steganografi
-Sisteme yüklenen dosyaların SHA-256 hash değerlerini çıkararak küresel tehdit istihbarat ağlarında taratır.
+### 🔍 B. Gelişmiş Dosya Analizi ve Steganografi
+* Sisteme yüklenen dosyaların SHA-256 hash değerlerini çıkararak küresel tehdit istihbarat ağlarında taratır.
+* Görüntü dosyalarının (PNG/JPEG) içerisine **LSB (Least Significant Bit)** yöntemiyle gizlenmiş olası komuta kontrol (C2) sızıntılarını adli bilişim teknikleriyle ayrıştırır.
 
-Görüntü dosyalarının (PNG/JPEG) içerisine LSB (Least Significant Bit) yöntemiyle gizlenmiş olası komuta kontrol (C2) sızıntılarını adli bilişim teknikleriyle ayrıştırır.
+### 🛡️ C. Statik Kod Analizi (SAST)
+* Kaynak kodları regex tabanlı kural setleriyle tarayarak hardcoded unutulmuş API anahtarlarını, şifreleri, SQL Injection ve XSS zafiyetlerini geliştirme aşamasında yakalar.
 
-🛡️ C. Statik Kod Analizi (SAST)
-Kaynak kodları regex tabanlı kural setleriyle tarayarak hardcoded unutulmuş API anahtarlarını, şifreleri, SQL Injection ve XSS zafiyetlerini geliştirme aşamasında yakalar.
+### 🪤 D. Aktif Savunma: Honeypot (Siber Tuzak)
+* Saldırganları ana sistemden uzak tutmak için sahte dizinler (`/wp-admin`, `/api/v1/admin`) açar. Yetkisiz erişim sağlayan IP'lerin coğrafi konum verilerini (Geolocation) çıkararak otomatik kara listeye alır.
 
-🪤 D. Aktif Savunma: Honeypot (Siber Tuzak)
-Saldırganları ana sistemden uzak tutmak için sahte dizinler (/wp-admin, /api/v1/admin) açar. Yetkisiz erişim sağlayan IP'lerin coğrafi konum verilerini (Geolocation) çıkararak otomatik kara listeye alır.
+### 📊 E. Otomatik Adli Raporlama
+* Olay silsilesini ve analiz çıktılarını yasal süreçlere uygun, ISO/IEC 27001 uyumlu resmi bir adli bilişim raporu (`.docx`) olarak otomatik üretir ve **Discord/Telegram API** üzerinden SOC ekiplerine anlık iletir.
 
-📊 E. Otomatik Adli Raporlama
-Olay silsilesini ve analiz çıktılarını yasal süreçlere uygun, ISO/IEC 27001 uyumlu resmi bir adli bilişim raporu (.docx) olarak otomatik üretir ve Discord/Telegram API üzerinden SOC ekiplerine anlık iletir.
+---
 
-🛠️ 3. Kurulum ve Konteyner Dağıtımı (Deployment)
-📋 Geliştirme Bağımlılıkları (requirements.txt)
-Plaintext
+## 🛠️ 3. Kurulum ve Konteyner Dağıtımı (Deployment)
+
+### 📋 Geliştirme Bağımlılıkları (requirements.txt)
+<pre><code>
 fastapi==0.110.0
 uvicorn[standard]==0.28.0
 pydantic==2.6.4
@@ -73,9 +76,12 @@ pandas==2.2.1
 requests==2.31.0
 python-docx==1.1.0
 aiohttp==3.9.3
-🐳 Dockerizasyon Yapısı
-1. Dockerfile
-Dockerfile
+</code></pre>
+
+### 🐳 Dockerizasyon Yapısı
+
+#### 1. Dockerfile
+<pre><code>
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -92,8 +98,10 @@ COPY . .
 EXPOSE 8000
 
 CMD ["uvicorn", "main.py:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
-2. docker-compose.yml
-YAML
+</code></pre>
+
+#### 2. docker-compose.yml
+<pre><code>
 version: '3.8'
 
 services:
@@ -110,10 +118,15 @@ services:
       driver: "json-file"
       options:
         max-size: "10m"
-🔑 4. Çevre Değişkenleri Yönetimi (.env.example)
-Güvenlik standartları gereği hassas veriler kod bloklarından izole edilerek .env dosyasında saklanır:
+</code></pre>
 
-Ini, TOML
+---
+
+## 🔑 4. Çevre Değişkenleri Yönetimi (.env.example)
+
+Güvenlik standartları gereği hassas veriler kod bloklarından izole edilerek `.env` dosyasında saklanır:
+
+<pre><code>
 # --- SUNUCU YAPILANDIRMASI ---
 SECRET_KEY=super_secret_forensic_hash_key_654321
 ENVIRONMENT=production
@@ -124,12 +137,17 @@ XPOSEDORNOT_API_KEY=your_xposedornot_data_breach_token_here
 
 # --- SOC KANAL AYARLARI ---
 TELEGRAM_BOT_TOKEN=8638671453:AAF_br_0utQzdK315ht7ZmZIg_0wosX0zVc
-DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/your_id/your_token
-🚀 5. Hızlı Başlangıç
-Manuel Kurulum
-Bash
+DISCORD_WEBHOOK_URL=[https://discord.com/api/webhooks/your_id/your_token](https://discord.com/api/webhooks/your_id/your_token)
+</code></pre>
+
+---
+
+## 🚀 5. Hızlı Başlangıç
+
+### Manuel Kurulum
+<pre><code>
 # 1. Depoyu klonlayın
-git clone https://github.com/kullanici_adi/siber-kalkan.git
+git clone [https://github.com/kullanici_adi/siber-kalkan.git](https://github.com/kullanici_adi/siber-kalkan.git)
 cd siber-kalkan
 
 # 2. Bağımlılıkları kurun
@@ -137,5 +155,8 @@ pip install -r requirements.txt
 
 # 3. API Gateway'i tetikleyin
 python main.py
-📱 6. Mobil Entegrasyon (Edge Config)
-SiberKalkan.macro betiği uç cihaza import edildikten sonra gerekli servis izinleri tanımlanır. Mobil otomasyon, yakaladığı sinyalleri TLS 1.3 şifreleme katmanı üzerinden doğrudan merkezi sunucunun https://siber-kalkan.onrender.com/api/v1/analiz/mobil/ uç noktasına güvenli bir şekilde ulaştırır.
+</code></pre>
+
+### 📱 6. Mobil Entegrasyon (Edge Config)
+
+SiberKalkan.macro betiği uç cihaza import edildikten sonra gerekli servis izinleri tan
