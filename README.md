@@ -1,3 +1,4 @@
+Markdown
 # 🛡️ Siber Kalkan: Çift Çekirdekli Proaktif Mobil Tehdit Analizi ve İstihbarat Platformu
 
 Siber Kalkan; uç Android cihaz telemetrisi (Edge Telemetry) ile asenkron backend mimarisini birleştiren, geleneksel imza tabanlı (signature-based) güvenlik sistemlerinin yetersiz kaldığı sıfırıncı gün (Zero-Day) ve oltalama (Phishing) tehditlerini proaktif olarak engelleyen **endüstriyel standartlarda (production-grade)** bir siber güvenlik platformudur.
@@ -61,3 +62,81 @@ pandas==2.2.1
 requests==2.31.0
 python-docx==1.1.0
 aiohttp==3.9.3
+🐳 Docker ve Mikroservis Konteyner Dağıtımı
+Siber Kalkan altyapısı, izole edilmiş ve platform bağımsız çalışabilen mikroservis konteyner yapısını (Dockerization) yerel ve bulut dağıtımları için varsayılan olarak destekler.
+
+1. Dockerfile (Backend & AI Inference Engine)
+Dockerfile
+# Hafif ve optimize edilmiş Python imajı taban alınmıştır
+FROM python:3.11-slim
+
+# Sistem bağımlılıklarının kurulması ve temizlenmesi
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Çalışma dizininin izole edilmesi
+WORKDIR /app
+
+# Bağımlılık matrisinin kopyalanması ve in-cache kurulumu
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Proje kaynak kodlarının ve eğitilmiş ML model vektörlerinin aktarılması
+COPY . .
+
+# ASGI sunucusunun dış dünyaya açacağı port mimarisi
+EXPOSE 8000
+
+# API ağ geçidinin production modunda başlatılması
+CMD ["uvicorn", "main.py:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+2. docker-compose.yml (Orkestrasyon Katmanı)
+YAML
+version: '3.8'
+
+services:
+  siber_kalkan_api:
+    build: .
+    container_name: siber_kalkan_core
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - RATE_LIMIT_PER_MINUTE=60
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+🔑 4. Çevre Değişkenleri ve Gizlilik Yönetimi (.env.example)
+Üretim ortamında API anahtarlarının ve gizli anahtarların güvenliği için python-dotenv modülü entegre edilmiştir. Dağıtım öncesi proje kök dizininde bir .env dosyası oluşturulmalı ve aşağıdaki şemaya göre yapılandırılmalıdır:
+
+Ini, TOML
+# --- SUNUCU YAPILANDIRMASI ---
+SECRET_KEY=super_secret_forensic_hash_key_654321
+ENVIRONMENT=production
+
+# --- HARİCİ TEHDİT İSTİHBARATI API ENTEGRASYONLARI ---
+VIRUSTOTAL_API_KEY=your_actual_virustotal_v3_api_token_here
+XPOSEDORNOT_API_KEY=your_xposedornot_data_breach_token_here
+
+# --- BİLDİRİM VE SOC KANAL AYARLARI ---
+TELEGRAM_BOT_TOKEN=8638671453:AAF_br_0utQzdK315ht7ZmZIg_0wosX0zVc
+DISCORD_WEBHOOK_URL=[https://discord.com/api/webhooks/your_webhook_id/your_webhook_token](https://discord.com/api/webhooks/your_webhook_id/your_webhook_token)
+🚀 5. Manuel Sunucu Kurulumu
+Depoyu yerel bilgisayarınıza kopyalayın:
+
+Bash
+git clone [https://github.com/kullanici_adi/siber-kalkan.git](https://github.com/kullanici_adi/siber-kalkan.git)
+cd siber-kalkan
+Gerekli bağımlılıkları yükleyin:
+
+Bash
+pip install -r requirements.txt
+Sunucuyu yerel modda başlatın:
+
+Bash
+python main.py
+📱 6. Mobil Entegrasyon (Edge Config)
+Mobil otomasyon script'i (SiberKalkan.macro) cihaza yüklendikten sonra, erişilebilirlik ve bildirim dinleme izinleri verilerek hedef sunucu endpoint'i (https://siber-kalkan.onrender.com/api/v1/analiz/mobil/) API Gateway olarak tanımlanır. Giriş sinyalleri TLS 1.3 şifreleme katmanı üzerinden sunucuya güvenli bir şekilde POST edilmeye hazırdır.
